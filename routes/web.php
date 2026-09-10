@@ -110,3 +110,13 @@ Route::middleware(['auth', 'throttle:60,1', 'role:parent'])->group(function () {
     Route::post('/parent/payments/wallet', [\App\Http\Controllers\StripePaymentController::class, 'payWithWallet'])->name('parent.wallet.pay')->middleware('throttle:10,1');
 });
 
+
+// Helper route to create storage symlink on shared hosting
+Route::get('/fix-storage', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return 'Enlace de almacenamiento creado con éxito. Las fotos deberían verse ahora.';
+    } catch (\Exception $e) {
+        return 'Error al crear el enlace: ' . $e->getMessage();
+    }
+});
