@@ -357,17 +357,17 @@ export default function Welcome() {
                             <h4 className="text-2xl font-bold text-slate-800 mb-4">Horarios</h4>
                             <ul className="space-y-4 text-slate-600 text-sm">
                                 <li className="border-l-4 border-[#0033A0] pl-3">
-                                    <strong className="text-[#0033A0] block text-base">Lunes y Miércoles</strong>
-                                    4:30 a 6:00pm - Pony (Cancha Chica)<br/>
-                                    6:00 a 7:00pm - Diente de Leche (Cancha Chica)
+                                    <strong className="text-[#0033A0] block text-base">Lunes y Miércoles (Cancha Chica)</strong>
+                                    4:30 a 6:00 pm - Diente de Leche (2017-2018) y Pony (2015-2016)<br/>
+                                    6:00 a 7:00 pm - Asquel, Biberón y menores
                                 </li>
                                 <li className="border-l-4 border-[#E31837] pl-3">
                                     <strong className="text-[#E31837] block text-base">Martes (Cancha Chica)</strong>
-                                    4:30 a 6:00pm - Porteros y Diente de Leche
+                                    4:30 a 6:00 pm - Asquel, Biberón y menores, y Porteros
                                 </li>
                                 <li className="border-l-4 border-slate-800 pl-3">
-                                    <strong className="text-slate-800 block text-base">Jueves</strong>
-                                    4:30 a 6:00pm - Ambas (Cancha Grande)
+                                    <strong className="text-slate-800 block text-base">Jueves (Cancha Grande)</strong>
+                                    4:30 a 6:00 pm - Diente de Leche y Pony
                                 </li>
                             </ul>
                         </motion.div>
