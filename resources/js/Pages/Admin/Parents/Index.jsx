@@ -287,7 +287,7 @@ export default function Index({ auth, parents, flash }) {
                                                 type="text"
                                                 value={editForm.data.name}
                                                 onChange={e => editForm.setData('name', e.target.value)}
-                                                className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
                                             />
                                             {editForm.errors.name && <p className="text-red-500 text-xs mt-1">{editForm.errors.name}</p>}
                                         </div>
@@ -299,7 +299,7 @@ export default function Index({ auth, parents, flash }) {
                                                     type="text"
                                                     value={editForm.data.username}
                                                     onChange={e => editForm.setData('username', e.target.value)}
-                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
                                                 />
                                                 {editForm.errors.username && <p className="text-red-500 text-xs mt-1">{editForm.errors.username}</p>}
                                             </div>
@@ -309,7 +309,8 @@ export default function Index({ auth, parents, flash }) {
                                                     type="text"
                                                     value={editForm.data.phone}
                                                     onChange={e => editForm.setData('phone', e.target.value)}
-                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
+                                                    placeholder="10 dígitos"
                                                 />
                                                 {editForm.errors.phone && <p className="text-red-500 text-xs mt-1">{editForm.errors.phone}</p>}
                                             </div>
@@ -332,7 +333,7 @@ export default function Index({ auth, parents, flash }) {
                                             placeholder="Nueva contraseña (mínimo 8 caracteres)"
                                             value={editForm.data.password}
                                             onChange={e => editForm.setData('password', e.target.value)}
-                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            className="w-full rounded-xl border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-slate-900"
                                             autoComplete="off"
                                         />
                                         {editForm.errors.password && <p className="text-red-500 text-xs mt-1">{editForm.errors.password}</p>}
