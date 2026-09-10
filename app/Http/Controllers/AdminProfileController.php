@@ -41,9 +41,9 @@ class AdminProfileController extends Controller
             $image = $manager->decode($file);
             $image->cover(300, 300); // Square profile photo
             
-            $path = storage_path('app/public/photos/' . $filename);
-            if (!file_exists(storage_path('app/public/photos'))) {
-                mkdir(storage_path('app/public/photos'), 0755, true);
+            $path = public_path('storage/photos/' . $filename);
+            if (!file_exists(public_path('storage/photos'))) {
+                mkdir(public_path('storage/photos'), 0755, true);
             }
             $image->save($path);
             $user->profile_photo_path = 'photos/' . $filename;
