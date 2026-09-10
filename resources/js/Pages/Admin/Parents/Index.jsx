@@ -4,6 +4,7 @@ import { Users, Search, Edit2, Key, Trash2, X, Phone, User as UserIcon, Camera, 
 
 export default function Index({ auth, parents, flash }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState('');
     const [editingParent, setEditingParent] = useState(null);
 
     const editForm = useForm({
@@ -13,11 +14,20 @@ export default function Index({ auth, parents, flash }) {
         password: '',
     });
 
-    const filteredParents = parents.filter(parent => 
-        parent.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        parent.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (parent.phone && parent.phone.includes(searchTerm))
-    );
+    const filteredParents = parents.filter(parent => {
+        const matchesSearch = 
+            parent.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            parent.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (parent.phone && parent.phone.includes(searchTerm)) ||
+            (parent.players && parent.players.some(child => 
+                `${child.first_name} ${child.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ));
+
+        const matchesCategory = filterCategory === '' || 
+            (parent.players && parent.players.some(child => child.category === filterCategory));
+
+        return matchesSearch && matchesCategory;
+    });
 
     const handleEditClick = (parent) => {
         setEditingParent(parent);
@@ -108,12 +118,25 @@ export default function Index({ auth, parents, flash }) {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Buscar tutor..."
+                                    placeholder="Buscar tutor o hijo..."
                                     className="pl-10 w-full md:w-64 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
+                            <select
+                                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm text-sm"
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                            >
+                                <option value="">Todas las Categorías</option>
+                                <option value="2018-2019">2018-2019</option>
+                                <option value="2016-2017">2016-2017</option>
+                                <option value="2014-2015">2014-2015</option>
+                                <option value="2012-2013">2012-2013</option>
+                                <option value="2010-2011">2010-2011</option>
+                                <option value="2008-2009">2008-2009</option>
+                            </select>
                         </div>
                     </div>
 

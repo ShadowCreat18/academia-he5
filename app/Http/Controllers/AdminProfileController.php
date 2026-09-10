@@ -27,10 +27,27 @@ class AdminProfileController extends Controller
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'current_password' => 'nullable|required_with:password|string',
             'password' => 'nullable|string|min:8|confirmed',
+            'photo' => 'nullable|image|max:10240', // 10MB max
         ]);
 
         $user->name = $request->name;
         $user->username = $request->username;
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = uniqid('profile_') . '.' . $file->getClientOriginalExtension();
+            
+            $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+            $image = $manager->decode($file);
+            $image->cover(300, 300); // Square profile photo
+            
+            $path = storage_path('app/public/photos/' . $filename);
+            if (!file_exists(storage_path('app/public/photos'))) {
+                mkdir(storage_path('app/public/photos'), 0755, true);
+            }
+            $image->save($path);
+            $user->profile_photo_path = 'photos/' . $filename;
+        }
 
         if ($request->filled('password')) {
             if (!Hash::check($request->current_password, $user->password)) {

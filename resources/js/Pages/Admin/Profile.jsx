@@ -1,22 +1,37 @@
 import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import { Save, User as UserIcon, Lock, Loader2, Key, LogOut, ArrowLeft, Settings } from 'lucide-react';
+import { Save, User as UserIcon, Lock, Loader2, Key, LogOut, ArrowLeft, Settings, Camera } from 'lucide-react';
 
 export default function Profile({ auth, flash }) {
-    const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        _method: 'put',
         name: auth.user.name,
         username: auth.user.username,
         current_password: '',
         password: '',
         password_confirmation: '',
+        photo: null,
     });
 
     const [isEditingPassword, setIsEditingPassword] = useState(false);
 
+    const [photoPreview, setPhotoPreview] = useState(auth.user.profile_photo_path ? `/storage/${auth.user.profile_photo_path}` : null);
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('photo', file);
+            const reader = new FileReader();
+            reader.onload = (e) => setPhotoPreview(e.target.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('admin.profile.update'), {
+        post(route('admin.profile.update'), {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
                 if (isEditingPassword) {
                     reset('current_password', 'password', 'password_confirmation');
@@ -81,6 +96,33 @@ export default function Profile({ auth, flash }) {
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             
+                            {/* Foto de Perfil */}
+                            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
+                                <div className="relative group">
+                                    <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-lg flex items-center justify-center relative">
+                                        {photoPreview ? (
+                                            <img src={photoPreview} alt="Perfil" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <UserIcon className="w-12 h-12 text-slate-300" />
+                                        )}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                            <Camera className="w-6 h-6 text-white" />
+                                        </div>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                        accept="image/*"
+                                        onChange={handlePhotoChange}
+                                    />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800">Foto de perfil</h4>
+                                    <p className="text-xs text-slate-500 max-w-xs mt-1">Haz clic en la imagen para subir una nueva foto. Se recomiendan imágenes cuadradas (JPG, PNG).</p>
+                                    {errors.photo && <p className="text-red-500 text-xs mt-2">{errors.photo}</p>}
+                                </div>
+                            </div>
+
                             {/* Datos Básicos */}
                             <div className="space-y-4">
                                 <div>
@@ -89,7 +131,7 @@ export default function Profile({ auth, flash }) {
                                         type="text"
                                         value={data.name}
                                         onChange={e => setData('name', e.target.value)}
-                                        className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
                                     />
                                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                                 </div>
@@ -100,7 +142,7 @@ export default function Profile({ auth, flash }) {
                                         type="text"
                                         value={data.username}
                                         onChange={e => setData('username', e.target.value)}
-                                        className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
                                     />
                                     {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
                                 </div>
@@ -134,7 +176,7 @@ export default function Profile({ auth, flash }) {
                                                 type="password"
                                                 value={data.current_password}
                                                 onChange={e => setData('current_password', e.target.value)}
-                                                className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-slate-900"
                                             />
                                             {errors.current_password && <p className="text-red-500 text-xs mt-1">{errors.current_password}</p>}
                                         </div>
@@ -146,7 +188,7 @@ export default function Profile({ auth, flash }) {
                                                     type="password"
                                                     value={data.password}
                                                     onChange={e => setData('password', e.target.value)}
-                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-slate-900"
                                                 />
                                                 {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                                             </div>
@@ -156,7 +198,7 @@ export default function Profile({ auth, flash }) {
                                                     type="password"
                                                     value={data.password_confirmation}
                                                     onChange={e => setData('password_confirmation', e.target.value)}
-                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-slate-900"
                                                 />
                                             </div>
                                         </div>
