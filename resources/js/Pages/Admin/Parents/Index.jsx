@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { Users, Search, Edit2, Key, Trash2, X, Phone, User as UserIcon, Camera, Save, Loader2, DollarSign, LogOut, ArrowLeft, Settings } from 'lucide-react';
 
 export default function Index({ auth, parents, flash }) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterCategory, setFilterCategory] = useState('');
+    const [filterCategory, setFilterCategory] = useState('Todas');
     const [editingParent, setEditingParent] = useState(null);
+
+    const categories = useMemo(() => {
+        const cats = new Set();
+        parents.forEach(parent => {
+            if (parent.players) {
+                parent.players.forEach(child => {
+                    if (child.category) cats.add(child.category);
+                });
+            }
+        });
+        return Array.from(cats).sort();
+    }, [parents]);
+
+    const tabs = ['Todas', ...categories];
 
     const editForm = useForm({
         name: '',
@@ -23,7 +37,7 @@ export default function Index({ auth, parents, flash }) {
                 `${child.first_name} ${child.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
             ));
 
-        const matchesCategory = filterCategory === '' || 
+        const matchesCategory = filterCategory === 'Todas' || 
             (parent.players && parent.players.some(child => child.category === filterCategory));
 
         return matchesSearch && matchesCategory;
@@ -124,21 +138,27 @@ export default function Index({ auth, parents, flash }) {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <select
-                                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm text-sm"
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                            >
-                                <option value="">Todas las Categorías</option>
-                                <option value="2018-2019">2018-2019</option>
-                                <option value="2016-2017">2016-2017</option>
-                                <option value="2014-2015">2014-2015</option>
-                                <option value="2012-2013">2012-2013</option>
-                                <option value="2010-2011">2010-2011</option>
-                                <option value="2008-2009">2008-2009</option>
-                            </select>
                         </div>
                     </div>
+
+                    {/* ── Pestañas de Categoría ── */}
+                    {!searchTerm && tabs.length > 1 && (
+                        <div className="flex overflow-x-auto hide-scrollbar space-x-2 mb-6 pb-2">
+                            {tabs.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFilterCategory(cat)}
+                                    className={`whitespace-nowrap px-5 py-2.5 rounded-full font-bold text-sm transition-colors ${
+                                        filterCategory === cat 
+                                        ? 'bg-[#0033A0] text-white shadow-md' 
+                                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Tabla de Tutores */}
                     <div className="bg-white overflow-hidden shadow-sm rounded-2xl border border-slate-200">
