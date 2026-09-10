@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Users, LogOut, ArrowLeft, Plus, X, UserPlus, Search, Download, Camera, Trash2, Edit, CheckSquare, AlertCircle, UserMinus, ListPlus, Trash, RotateCcw } from 'lucide-react';
+import { Users, User, LogOut, ArrowLeft, Plus, X, UserPlus, Search, Download, Camera, Trash2, Edit, CheckSquare, AlertCircle, UserMinus, ListPlus, Trash, RotateCcw } from 'lucide-react';
 
 export default function Index({ auth, playersByCategory, inactivePlayers = [], parents, allPlayers = [], flash }) {
     const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
@@ -392,12 +392,25 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                         />
                                     </div>
                                 )}
-                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 ml-4">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 ml-4 relative">
                                     {player.photo_path ? (
-                                        <img src={`/storage/${player.photo_path}`} alt="Foto" className="w-full h-full object-cover" />
+                                        <>
+                                            <img 
+                                                src={`/storage/${player.photo_path}`} 
+                                                alt="Foto" 
+                                                className="w-full h-full object-cover" 
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextElementSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                            <div className="w-full h-full flex items-center justify-center text-slate-400 absolute inset-0" style={{display: 'none'}}>
+                                                <User size={32} />
+                                            </div>
+                                        </>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                            <Users className="w-8 h-8" />
+                                            <User size={32} />
                                         </div>
                                     )}
                                 </div>

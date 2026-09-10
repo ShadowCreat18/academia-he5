@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
+import axios from 'axios';
 import { DollarSign, Wallet, AlertCircle, CreditCard, CheckCircle2, ArrowRight, Loader2, PlusCircle, X, History, Receipt } from 'lucide-react';
 import ParentLayout from '@/Layouts/ParentLayout';
 
@@ -16,18 +17,18 @@ export default function Finances({ auth, children = [] }) {
     const handlePayWithStripe = async (payload, actionKey) => {
         setLoadingAction(actionKey);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const response = await fetch(route('parent.stripe.checkout'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
+            
+            const response = await axios.post(route('parent.stripe.checkout'), payload);
+                
+                
+                    
+                    
+                    
+                
+                
+            
 
-            const data = await response.json();
+            const data = response.data;
 
             if (data.url) {
                 window.location.href = data.url;

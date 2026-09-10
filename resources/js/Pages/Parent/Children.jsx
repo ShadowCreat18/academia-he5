@@ -153,9 +153,22 @@ export default function Children({ children = [] }) {
                             {/* Card Header (Photo & Name) */}
                             <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-start justify-between">
                                 <div className="flex items-center space-x-4">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-sm bg-slate-200 flex-shrink-0">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-sm bg-slate-200 flex-shrink-0 relative">
                                         {child.photo_path ? (
-                                            <img src={`/storage/${child.photo_path}`} alt={child.first_name} className="w-full h-full object-cover" />
+                                            <>
+                                                <img 
+                                                    src={`/storage/${child.photo_path}`} 
+                                                    alt={child.first_name} 
+                                                    className="w-full h-full object-cover" 
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextElementSibling.style.display = 'flex';
+                                                    }}
+                                                />
+                                                <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-500 absolute inset-0" style={{display: 'none'}}>
+                                                    <User size={32} />
+                                                </div>
+                                            </>
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-500">
                                                 <User size={32} />
