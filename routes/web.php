@@ -10,6 +10,7 @@ use App\Http\Controllers\ParentManagementController;
 use App\Http\Controllers\AdminProfileController;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
