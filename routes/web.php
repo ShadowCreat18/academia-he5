@@ -6,6 +6,8 @@ use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ParentManagementController;
+use App\Http\Controllers\AdminProfileController;
 
 use Inertia\Inertia;
 
@@ -52,6 +54,9 @@ Route::middleware(['auth', 'throttle:60,1', 'role:admin'])->group(function () {
     Route::post('/players/{player}/reactivate', [PlayerController::class, 'reactivate'])->name('players.reactivate');
     Route::resource('players', PlayerController::class);
     Route::resource('categories', CategoryController::class);
+    
+    // Parents (Admin)
+    Route::resource('parents', ParentManagementController::class)->except(['create', 'show', 'edit', 'store']);
 
     // PDF Generation (admin)
     Route::get('/transactions/{id}/receipt', [\App\Http\Controllers\PdfController::class, 'downloadReceipt'])->name('pdf.receipt');
@@ -77,6 +82,10 @@ Route::middleware(['auth', 'throttle:60,1', 'role:admin'])->group(function () {
     Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
     Route::post('/settings/deletion-requests/{deletionRequest}/process', [\App\Http\Controllers\SettingController::class, 'processDeletion'])->name('settings.deletion-requests.process');
+
+    // Admin Profile
+    Route::get('/profile', [AdminProfileController::class, 'index'])->name('admin.profile.index');
+    Route::put('/profile', [AdminProfileController::class, 'update'])->name('admin.profile.update');
 
     // Matches/Games
     Route::post('/matches/{game}/arbitration', [\App\Http\Controllers\GameController::class, 'processArbitration'])->name('matches.arbitration');

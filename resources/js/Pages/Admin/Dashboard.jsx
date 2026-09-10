@@ -32,7 +32,10 @@ export default function Dashboard({ auth, categoriesStats = {}, ...props }) {
                         </div>
                         <div className="flex items-center space-x-6">
                             <span className="font-medium">Hola, {auth?.user?.name || 'Admin'}</span>
-                            <Link href="/logout" method="post" as="button" className="hover:text-red-300 transition-colors">
+                            <Link href="/profile" className="hover:text-blue-200 transition-colors" title="Mi Perfil">
+                                <Settings className="w-5 h-5" />
+                            </Link>
+                            <Link href="/logout" method="post" as="button" className="hover:text-red-300 transition-colors" title="Cerrar Sesión">
                                 <LogOut className="w-5 h-5" />
                             </Link>
                         </div>
@@ -50,6 +53,10 @@ export default function Dashboard({ auth, categoriesStats = {}, ...props }) {
                         <Link href="/players" className="flex-1 md:flex-none justify-center bg-[#E31837] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center space-x-2 shadow-md">
                             <Users className="w-5 h-5" />
                             <span>Jugadores</span>
+                        </Link>
+                        <Link href="/parents" className="flex-1 md:flex-none justify-center bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center space-x-2 shadow-md">
+                            <Users className="w-5 h-5" />
+                            <span>Tutores</span>
                         </Link>
                         <Link href="/finances" className="flex-1 md:flex-none justify-center bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex items-center space-x-2 shadow-md">
                             <Wallet className="w-5 h-5" />
