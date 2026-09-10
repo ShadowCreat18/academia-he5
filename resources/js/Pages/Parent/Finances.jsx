@@ -304,7 +304,7 @@ export default function Finances({ auth, children = [] }) {
                                                                     </div>
                                                                     <div className="flex justify-between items-center text-xs">
                                                                         <span className="text-slate-500">
-                                                                            Vence: {new Date(tx.due_date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                            Vence: {new Date(tx.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                                         </span>
                                                                         {!isPaid && tx.paid_amount > 0 && (
                                                                             <span className="text-orange-600 font-medium">Abonado: ${tx.paid_amount} (Resta: ${debt})</span>
