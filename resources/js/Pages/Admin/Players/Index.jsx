@@ -499,7 +499,7 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                             accept="image/*" 
                                             capture="environment" 
                                             onChange={handlePhotoChange} 
-                                            className="hidden" 
+                                            className="hidden text-slate-900 bg-white" 
                                         />
                                     </label>
                                     <p className="text-xs text-slate-400 mt-2 text-center">Formato 2.5 x 3 cm</p>
@@ -711,7 +711,7 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                                         type="checkbox" 
                                                         checked={parentForm.data.player_ids.includes(player.id)}
                                                         onChange={() => handleParentPlayerToggle(player.id)}
-                                                        className="rounded border-slate-300 text-[#0033A0] focus:ring-[#0033A0]"
+                                                        className="rounded border-slate-300 text-[#0033A0] focus:ring-[#0033A0] text-slate-900"
                                                     />
                                                     <span className="text-sm text-slate-700">
                                                         {player.first_name} {player.last_name}

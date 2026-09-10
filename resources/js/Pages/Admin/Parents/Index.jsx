@@ -133,7 +133,7 @@ export default function Index({ auth, parents, flash }) {
                                 <input
                                     type="text"
                                     placeholder="Buscar tutor o hijo..."
-                                    className="pl-10 w-full md:w-64 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm"
+                                    className="pl-10 w-full md:w-64 border-slate-300 focus:border-blue-500 focus:ring-blue-500 rounded-lg shadow-sm text-slate-900 bg-white"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />

@@ -111,7 +111,7 @@ export default function Profile({ auth, flash }) {
                                     </div>
                                     <input 
                                         type="file" 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-slate-900 bg-white" 
                                         accept="image/*"
                                         onChange={handlePhotoChange}
                                     />
