@@ -111,12 +111,22 @@ Route::middleware(['auth', 'throttle:60,1', 'role:parent'])->group(function () {
 });
 
 
-// Helper route to create storage symlink on shared hosting
-Route::get('/fix-storage', function () {
-    try {
-        \Illuminate\Support\Facades\Artisan::call('storage:link');
-        return 'Enlace de almacenamiento creado con éxito. Las fotos deberían verse ahora.';
-    } catch (\Exception $e) {
-        return 'Error al crear el enlace: ' . $e->getMessage();
+// Fallback to serve storage files directly if symlink is missing or broken on shared hosting
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
     }
-});
+    
+    // Check if it's a valid mime type (basic security check)
+    $mimeType = mime_content_type($fullPath);
+    if (!$mimeType || strpos($mimeType, 'image/') !== 0) {
+        // You can allow PDFs or other types if needed, for now just images
+        // Actually let's allow images and PDFs
+        if (strpos($mimeType, 'application/pdf') !== 0 && strpos($mimeType, 'image/') !== 0) {
+            abort(404);
+        }
+    }
+    
+    return response()->file($fullPath);
+})->where('path', '.*');
