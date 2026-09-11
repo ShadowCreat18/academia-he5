@@ -26,6 +26,7 @@ class Player extends Model
         'category',
         'secondary_category',
         'status',
+        'charges_generated_year',
     ];
 
     /**

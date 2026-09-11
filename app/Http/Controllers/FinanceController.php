@@ -43,13 +43,8 @@ class FinanceController extends Controller
             if ($selectedPlayer) {
                 // Auto-generate current year charges if the player has none
                 $currentYear = date('Y');
-                $hasCurrentYearCharges = $selectedPlayer->financialTransactions
-                    ->filter(function ($tx) use ($currentYear) {
-                        $dueYear = $tx->due_date ? date('Y', strtotime($tx->due_date)) : null;
-                        return $dueYear === $currentYear;
-                    })->count() > 0;
 
-                if (!$hasCurrentYearCharges) {
+                if ($selectedPlayer->charges_generated_year < $currentYear) {
                     $parentId = $selectedPlayer->parents->first()->id ?? Auth::id();
                     $costInscripcion = Setting::getVal('cost_inscripcion', 1250);
                     $costMaterial = Setting::getVal('cost_material', 1000);
@@ -64,14 +59,17 @@ class FinanceController extends Controller
                         ['concept' => 'Uniformes', 'amount' => $costUniformes, 'due_date' => "$currentYear-01-15"],
                     ];
 
-                    // Add 12 monthly charges
+                    // Add monthly charges based on join date
                     $meses = [
                         1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
                         5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
                         9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
                     ];
+
+                    $playerYear = date('Y', strtotime($selectedPlayer->created_at));
+                    $startMonth = ($playerYear == $currentYear) ? (int)date('n', strtotime($selectedPlayer->created_at)) : 1;
                     
-                    for ($m = 1; $m <= 12; $m++) {
+                    for ($m = $startMonth; $m <= 12; $m++) {
                         $concepts[] = [
                             'concept' => 'Mensualidad ' . $meses[$m],
                             'amount' => $costMensualidad,
@@ -90,6 +88,9 @@ class FinanceController extends Controller
                             'status' => 'pending',
                         ]);
                     }
+
+                    $selectedPlayer->charges_generated_year = $currentYear;
+                    $selectedPlayer->save();
 
                     // Reload transactions
                     $selectedPlayer->load(['financialTransactions' => function ($q) {

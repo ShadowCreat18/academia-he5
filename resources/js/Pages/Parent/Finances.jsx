@@ -4,7 +4,7 @@ import axios from 'axios';
 import { DollarSign, Wallet, AlertCircle, CreditCard, CheckCircle2, ArrowRight, Loader2, PlusCircle, X, History, Receipt } from 'lucide-react';
 import ParentLayout from '@/Layouts/ParentLayout';
 
-export default function Finances({ auth, children = [] }) {
+export default function Finances({ auth, children = [], userPayments = [] }) {
     const [loadingAction, setLoadingAction] = useState(null);
     const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
     const [topupAmount, setTopupAmount] = useState('');
@@ -284,51 +284,109 @@ export default function Finances({ auth, children = [] }) {
                 </div>
 
                 {/* Contenido de Tabs */}
-                {children.length > 0 ? (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        {children.map((child) => {
-                            // Fix: The relationship is serialized as `financial_transactions` in JSON
-                            const transactions = child.financial_transactions || child.financialTransactions || [];
-                            
-                            let filteredTransactions = [];
-                            if (activeTab === 'pendientes') {
-                                filteredTransactions = transactions.filter(tx => (tx.amount - tx.paid_amount) > 0);
-                            } else {
-                                filteredTransactions = transactions.filter(tx => (tx.amount - tx.paid_amount) <= 0);
-                            }
-
-                            return (
-                                <div key={child.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
-                                    <div>
-                                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                                            <div>
-                                                <h3 className="text-lg font-bold text-slate-800">
-                                                    {activeTab === 'pendientes' ? 'Estado de Cuenta' : 'Pagos Realizados'}
-                                                </h3>
-                                                <p className="text-slate-500 font-medium">{child.first_name} {child.last_name}</p>
+                {activeTab === 'historial' ? (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">Historial de Pagos y Recargas</h3>
+                                <p className="text-slate-500 font-medium">Todos tus movimientos financieros</p>
+                            </div>
+                        </div>
+                        <div className="p-0">
+                            {userPayments && userPayments.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {userPayments.map(payment => {
+                                        const isTopup = !payment.financial_transaction_id;
+                                        const player = !isTopup && payment.financial_transaction?.player 
+                                            ? `${payment.financial_transaction.player.first_name} ${payment.financial_transaction.player.last_name}` 
+                                            : null;
+                                        let conceptLabel = 'Pago';
+                                        if (isTopup) {
+                                            conceptLabel = 'Recarga de monedero digital';
+                                        } else if (payment.financial_transaction) {
+                                            const txAmount = parseFloat(payment.financial_transaction.amount);
+                                            const paidAmount = parseFloat(payment.amount);
+                                            if (paidAmount < txAmount) {
+                                                conceptLabel = `Abono a: ${payment.financial_transaction.concept}`;
+                                            } else {
+                                                conceptLabel = `Pago a: ${payment.financial_transaction.concept}`;
+                                            }
+                                        }
+                                            
+                                        return (
+                                            <div key={payment.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                                                <div className="flex-shrink-0">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isTopup ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                        {isTopup ? <PlusCircle className="w-5 h-5" /> : <Receipt className="w-5 h-5" />}
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <h4 className="font-bold text-slate-800 text-sm">
+                                                            {conceptLabel}
+                                                        </h4>
+                                                        <div className="text-right">
+                                                            <p className={`font-bold text-sm ${isTopup ? 'text-green-600' : 'text-slate-800'}`}>
+                                                                {isTopup ? '+' : ''}${payment.amount}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs text-slate-500">
+                                                        <span>
+                                                            {new Date(payment.created_at).toLocaleDateString('es-MX', { 
+                                                                day: 'numeric', month: 'short', year: 'numeric',
+                                                                hour: '2-digit', minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {isTopup ? 'Abono a monedero' : (player ? `Para: ${player}` : 'Pago realizado')}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            {activeTab === 'pendientes' && (
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 text-slate-500">
+                                    <History className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                    <p className="text-sm font-medium">No hay pagos ni recargas registrados aún.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    children.length > 0 ? (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            {children.map((child) => {
+                                const transactions = child.financial_transactions || child.financialTransactions || [];
+                                const filteredTransactions = transactions.filter(tx => (tx.amount - tx.paid_amount) > 0);
+
+                                return (
+                                    <div key={child.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
+                                        <div>
+                                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-800">Estado de Cuenta</h3>
+                                                    <p className="text-slate-500 font-medium">{child.first_name} {child.last_name}</p>
+                                                </div>
                                                 <div className="text-right">
                                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Total Pendiente</p>
                                                     <p className={`text-2xl font-black ${child.total_debt > 0 ? 'text-[#E31837]' : 'text-green-600'}`}>
                                                         ${child.total_debt.toFixed(2)}
                                                     </p>
                                                 </div>
-                                            )}
-                                        </div>
+                                            </div>
 
-                                        <div className="p-0">
-                                            {filteredTransactions.length > 0 ? (
-                                                <div className="divide-y divide-slate-100">
-                                                    {filteredTransactions.map(tx => {
-                                                        const debt = Math.max(0, tx.amount - tx.paid_amount);
-                                                        const isPaid = debt <= 0;
-                                                        const isSelected = selectedTransactions.some(item => item.id === tx.id);
-                                                        
-                                                        return (
-                                                            <div key={tx.id} className={`p-4 flex items-center gap-4 transition-colors hover:bg-slate-50 ${isSelected ? 'bg-red-50/50' : ''}`}>
-                                                                {/* Checkbox para pagos pendientes */}
-                                                                {!isPaid && (
+                                            <div className="p-0">
+                                                {filteredTransactions.length > 0 ? (
+                                                    <div className="divide-y divide-slate-100">
+                                                        {filteredTransactions.map(tx => {
+                                                            const debt = Math.max(0, tx.amount - tx.paid_amount);
+                                                            const isSelected = selectedTransactions.some(item => item.id === tx.id);
+                                                            
+                                                            return (
+                                                                <div key={tx.id} className={`p-4 flex items-center gap-4 transition-colors hover:bg-slate-50 ${isSelected ? 'bg-red-50/50' : ''}`}>
                                                                     <div className="flex-shrink-0">
                                                                         <input
                                                                             type="checkbox"
@@ -337,93 +395,78 @@ export default function Finances({ auth, children = [] }) {
                                                                             className="w-5 h-5 text-[#E31837] rounded border-slate-300 focus:ring-[#E31837] text-slate-900"
                                                                         />
                                                                     </div>
-                                                                )}
-                                                                {isPaid && (
-                                                                    <div className="flex-shrink-0">
-                                                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                                                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
 
-                                                                {/* Info del concepto */}
-                                                                <div className="flex-1">
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <h4 className={`font-bold text-sm ${isSelected ? 'text-[#E31837]' : 'text-slate-800'}`}>
-                                                                            {tx.concept}
-                                                                        </h4>
-                                                                        <div className="text-right">
-                                                                            <p className="font-bold text-slate-800 text-sm">
-                                                                                ${tx.amount}
-                                                                            </p>
-                                                                            {userBalance > 0 && !isPaid && (
-                                                                                <button 
-                                                                                    onClick={() => {
-                                                                                        setSelectedWalletTx({ id: tx.id, debt, concept: tx.concept });
-                                                                                        setWalletAmount(Math.min(userBalance, debt).toString());
-                                                                                        setWalletModalOpen(true);
-                                                                                    }}
-                                                                                    className="text-[10px] bg-green-100 hover:bg-green-200 text-green-800 px-2 py-0.5 mt-1 rounded font-semibold transition"
-                                                                                >
-                                                                                    Abonar con saldo
-                                                                                </button>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex justify-between items-start mb-1">
+                                                                            <h4 className={`font-bold text-sm ${isSelected ? 'text-[#E31837]' : 'text-slate-800'}`}>
+                                                                                {tx.concept}
+                                                                            </h4>
+                                                                            <div className="text-right">
+                                                                                <p className="font-bold text-slate-800 text-sm">
+                                                                                    ${tx.amount}
+                                                                                </p>
+                                                                                {userBalance > 0 && (
+                                                                                    <button 
+                                                                                        onClick={() => {
+                                                                                            setSelectedWalletTx({ id: tx.id, debt, concept: tx.concept });
+                                                                                            setWalletAmount(Math.min(userBalance, debt).toString());
+                                                                                            setWalletModalOpen(true);
+                                                                                        }}
+                                                                                        className="text-[10px] bg-green-100 hover:bg-green-200 text-green-800 px-2 py-0.5 mt-1 rounded font-semibold transition"
+                                                                                    >
+                                                                                        Abonar con saldo
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex justify-between items-center text-xs">
+                                                                            <span className="text-slate-500">
+                                                                                Vence: {new Date(tx.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                            </span>
+                                                                            {tx.paid_amount > 0 && (
+                                                                                <span className="text-orange-600 font-medium">Abonado: ${tx.paid_amount} (Resta: ${debt})</span>
                                                                             )}
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex justify-between items-center text-xs">
-                                                                        <span className="text-slate-500">
-                                                                            Vence: {new Date(tx.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                                        </span>
-                                                                        {!isPaid && tx.paid_amount > 0 && (
-                                                                            <span className="text-orange-600 font-medium">Abonado: ${tx.paid_amount} (Resta: ${debt})</span>
-                                                                        )}
-                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-10 text-slate-500">
-                                                    {activeTab === 'pendientes' ? (
-                                                        <CheckCircle2 className="w-12 h-12 text-green-300 mx-auto mb-3" />
-                                                    ) : (
-                                                        <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                                                    )}
-                                                    <p className="text-sm font-medium">
-                                                        {activeTab === 'pendientes' ? '¡Todo al corriente! No hay adeudos.' : 'No hay pagos registrados aún.'}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Botón de Liquidar Todo con Tarjeta (Rediseñado) */}
-                                    {activeTab === 'pendientes' && child.total_debt > 0 && (
-                                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                                            <button
-                                                onClick={() => handlePayWithStripe({ type: 'player_total', player_id: child.id }, `player_${child.id}`)}
-                                                disabled={loadingAction === `player_${child.id}`}
-                                                className="text-[#E31837] hover:text-red-700 font-bold text-sm flex items-center gap-1.5 transition disabled:opacity-50 px-3 py-2 hover:bg-red-50 rounded-lg"
-                                            >
-                                                {loadingAction === `player_${child.id}` ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                            );
+                                                        })}
+                                                    </div>
                                                 ) : (
-                                                    <CreditCard className="w-4 h-4" />
+                                                    <div className="text-center py-10 text-slate-500">
+                                                        <CheckCircle2 className="w-12 h-12 text-green-300 mx-auto mb-3" />
+                                                        <p className="text-sm font-medium">¡Todo al corriente! No hay adeudos.</p>
+                                                    </div>
                                                 )}
-                                                Liquidar todo el saldo de {child.first_name} (${child.total_debt.toFixed(2)})
-                                            </button>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">No tienes jugadores vinculados</h3>
-                        <p className="text-slate-500">Pide a administración que vincule a tus hijos para ver su estado de cuenta.</p>
-                    </div>
+
+                                        {child.total_debt > 0 && (
+                                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                                <button
+                                                    onClick={() => handlePayWithStripe({ type: 'player_total', player_id: child.id }, `player_${child.id}`)}
+                                                    disabled={loadingAction === `player_${child.id}`}
+                                                    className="text-[#E31837] hover:text-red-700 font-bold text-sm flex items-center gap-1.5 transition disabled:opacity-50 px-3 py-2 hover:bg-red-50 rounded-lg"
+                                                >
+                                                    {loadingAction === `player_${child.id}` ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <CreditCard className="w-4 h-4" />
+                                                    )}
+                                                    Liquidar todo el saldo de {child.first_name} (${child.total_debt.toFixed(2)})
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">No tienes jugadores vinculados</h3>
+                            <p className="text-slate-500">Pide a administración que vincule a tus hijos para ver su estado de cuenta.</p>
+                        </div>
+                    )
                 )}
             </div>
 

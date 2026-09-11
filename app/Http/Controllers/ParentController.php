@@ -90,13 +90,7 @@ class ParentController extends Controller
         $currentYear = date('Y');
 
         foreach ($children as $child) {
-            $hasCurrentYearCharges = $child->financialTransactions
-                ->filter(function ($tx) use ($currentYear) {
-                    $dueYear = $tx->due_date ? date('Y', strtotime($tx->due_date)) : null;
-                    return $dueYear === $currentYear;
-                })->count() > 0;
-
-            if (!$hasCurrentYearCharges) {
+            if ($child->charges_generated_year < $currentYear) {
                 $costInscripcion = Setting::getVal('cost_inscripcion', 1250);
                 $costMaterial = Setting::getVal('cost_material', 1000);
                 $costTorneo = Setting::getVal('cost_torneo', 250);
@@ -116,7 +110,11 @@ class ParentController extends Controller
                     9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
                 ];
 
-                for ($m = 1; $m <= 12; $m++) {
+                // Determine start month based on player creation date
+                $playerYear = date('Y', strtotime($child->created_at));
+                $startMonth = ($playerYear == $currentYear) ? (int)date('n', strtotime($child->created_at)) : 1;
+
+                for ($m = $startMonth; $m <= 12; $m++) {
                     $concepts[] = [
                         'concept' => 'Mensualidad ' . $meses[$m],
                         'amount' => $costMensualidad,
@@ -136,6 +134,9 @@ class ParentController extends Controller
                     ]);
                 }
 
+                $child->charges_generated_year = $currentYear;
+                $child->save();
+
                 $child->load(['financialTransactions' => function ($q) {
                     $q->orderByDesc('due_date');
                 }, 'financialTransactions.transactionPayments']);
@@ -151,8 +152,16 @@ class ParentController extends Controller
             $child->total_debt = $totalDebt;
         }
 
+        $userPayments = \App\Models\TransactionPayment::where('user_id', $user->id)
+            ->with(['financialTransaction' => function($q) {
+                $q->with('player:id,first_name,last_name');
+            }])
+            ->orderByDesc('created_at')
+            ->get();
+
         return Inertia::render('Parent/Finances', [
             'children' => $children,
+            'userPayments' => $userPayments,
         ]);
     }
 
