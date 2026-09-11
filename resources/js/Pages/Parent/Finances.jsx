@@ -109,8 +109,7 @@ export default function Finances({ auth, children = [] }) {
                                 </div>
                                 <form onSubmit={handleTopupSubmit} className="p-6 space-y-4">
                                     <p className="text-sm text-slate-600">
-                                        Ingresa el monto en pesos (MXN) que deseas abonar a tu cuenta usando tarjeta de crédito o débito a través de Stripe. 
-                                        <br/><span className="text-xs text-orange-600 font-bold mt-1 inline-block">* Se añadirá un cargo por servicio de la plataforma en la siguiente pantalla.</span>
+                                        Ingresa el monto en pesos (MXN) que deseas abonar a tu cuenta usando tarjeta de crédito o débito a través de Stripe.
                                     </p>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Monto a Recargar</label>
@@ -345,7 +344,7 @@ export default function Finances({ auth, children = [] }) {
                                                 ) : (
                                                     <CreditCard className="w-4 h-4" />
                                                 )}
-                                                Liquidar todo el saldo de {child.first_name} (${child.total_debt.toFixed(2)}) + Comisiones
+                                                Liquidar todo el saldo de {child.first_name} (${child.total_debt.toFixed(2)})
                                             </button>
                                         </div>
                                     )}
@@ -367,7 +366,7 @@ export default function Finances({ auth, children = [] }) {
                     <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 max-w-lg w-full flex items-center justify-between gap-4">
                         <div>
                             <p className="text-sm text-slate-500 font-medium">Seleccionados: <span className="font-bold text-slate-800">{selectedTransactions.length}</span></p>
-                            <p className="text-xl font-black text-[#E31837]">${selectedTotal.toFixed(2)} MXN <span className="text-xs font-semibold text-slate-500">+ cargo por servicio</span></p>
+                            <p className="text-xl font-black text-[#E31837]">${selectedTotal.toFixed(2)} MXN</p>
                         </div>
                         <button
                             onClick={handlePayMultipleStripe}
