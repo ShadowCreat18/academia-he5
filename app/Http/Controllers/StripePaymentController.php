@@ -416,7 +416,14 @@ class StripePaymentController extends Controller
             return response()->json(['error' => 'Invalid payload'], 400);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
             Log::warning('Stripe webhook firma inválida. Error exacto: ' . $e->getMessage());
-            return response()->json(['error' => 'Invalid signature'], 400);
+            return response()->json([
+                'error' => 'Invalid signature',
+                'debug' => [
+                    'header_received' => $sigHeader ?: 'NULL_OR_EMPTY',
+                    'secret_length' => strlen($webhookSecret),
+                    'payload_length' => strlen($payload),
+                ]
+            ], 400);
         }
 
         // Solo procesamos checkout sessions completadas
