@@ -21,6 +21,22 @@ class StripePaymentController extends Controller
         Stripe::setApiKey(config('services.stripe.secret'));
     }
 
+    /**
+     * Calcula el cobro bruto para que la academia reciba: Monto Original + 10% de comisión.
+     * Toma en cuenta la comisión de Stripe (3.6% + $3 MXN).
+     */
+    private function calculateGrossAmount($originalAmount)
+    {
+        // 1. Queremos que la academia reciba el monto original + 10%
+        $desiredNet = $originalAmount * 1.10;
+        
+        // 2. Stripe cobra 3.6% sobre el Total + $3 MXN.
+        // Fórmula matemática: Total = (Neto Deseado + 3) / (1 - 0.036)
+        $totalCharge = ($desiredNet + 3) / 0.964;
+        
+        return round($totalCharge, 2);
+    }
+
 
     /**
      * Iniciar sesión de pago en Stripe Checkout.
@@ -56,9 +72,9 @@ class StripePaymentController extends Controller
                     'currency' => 'mxn',
                     'product_data' => [
                         'name' => $transaction->concept . ' - ' . ($transaction->player ? $transaction->player->first_name . ' ' . $transaction->player->last_name : 'HE-5'),
-                        'description' => 'Pago de concepto para Academia HE-5',
+                        'description' => 'Pago de concepto para Academia HE-5 (Incluye comisiones)',
                     ],
-                    'unit_amount' => (int) round($debt * 100),
+                    'unit_amount' => (int) round($this->calculateGrossAmount($debt) * 100),
                 ],
                 'quantity' => 1,
             ];
@@ -91,9 +107,9 @@ class StripePaymentController extends Controller
                     'currency' => 'mxn',
                     'product_data' => [
                         'name' => 'Pago de Adeudos (' . count($transactions) . ' conceptos)',
-                        'description' => 'Jugadores: ' . implode(', ', $playerNames),
+                        'description' => 'Jugadores: ' . implode(', ', $playerNames) . ' (Incluye comisiones)',
                     ],
-                    'unit_amount' => (int) round($totalDebt * 100),
+                    'unit_amount' => (int) round($this->calculateGrossAmount($totalDebt) * 100),
                 ],
                 'quantity' => 1,
             ];
@@ -124,9 +140,9 @@ class StripePaymentController extends Controller
                     'currency' => 'mxn',
                     'product_data' => [
                         'name' => 'Liquidación Total - ' . $player->first_name . ' ' . $player->last_name,
-                        'description' => 'Pago total de conceptos pendientes en Academia HE-5',
+                        'description' => 'Pago total de conceptos pendientes en Academia HE-5 (Incluye comisiones)',
                     ],
-                    'unit_amount' => (int) round($totalDebt * 100),
+                    'unit_amount' => (int) round($this->calculateGrossAmount($totalDebt) * 100),
                 ],
                 'quantity' => 1,
             ];
@@ -145,9 +161,9 @@ class StripePaymentController extends Controller
                     'currency' => 'mxn',
                     'product_data' => [
                         'name' => 'Recarga de Monedero Digital HE-5',
-                        'description' => 'Saldo a favor para pagos en plataforma',
+                        'description' => 'Saldo a favor para pagos en plataforma (Incluye comisiones)',
                     ],
-                    'unit_amount' => (int) round($amount * 100),
+                    'unit_amount' => (int) round($this->calculateGrossAmount($amount) * 100),
                 ],
                 'quantity' => 1,
             ];
@@ -299,6 +315,15 @@ class StripePaymentController extends Controller
 
                 } elseif ($type === 'wallet_topup') {
                     $amount = (float) $metadata->amount;
+
+                    TransactionPayment::create([
+                        'financial_transaction_id' => null,
+                        'user_id' => $user->id,
+                        'amount' => $amount,
+                        'method' => 'card',
+                        'stripe_payment_id' => $paymentIntentId,
+                    ]);
+
                     $user->saldo_disponible += $amount;
                     $user->save();
                 }
@@ -461,7 +486,17 @@ class StripePaymentController extends Controller
                     }
 
                 } elseif ($type === 'wallet_topup') {
-                    $user->saldo_disponible += (float) $metadata->amount;
+                    $amount = (float) $metadata->amount;
+
+                    TransactionPayment::create([
+                        'financial_transaction_id' => null,
+                        'user_id' => $user->id,
+                        'amount' => $amount,
+                        'method' => 'card',
+                        'stripe_payment_id' => $paymentIntentId,
+                    ]);
+
+                    $user->saldo_disponible += $amount;
                     $user->save();
                 }
             });
