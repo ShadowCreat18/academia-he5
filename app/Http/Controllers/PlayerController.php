@@ -127,7 +127,7 @@ class PlayerController extends Controller
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
             'password' => 'required|string|min:8',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:25',
             'player_ids' => 'nullable|array',
             'player_ids.*' => 'exists:players,id',
         ]);

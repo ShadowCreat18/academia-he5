@@ -206,8 +206,8 @@ class ParentController extends Controller
         
         $request->validate([
             'address' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:2048',
+            'phone'   => 'nullable|string|max:25',
+            'photo'   => 'nullable|image|max:2048',
         ]);
 
         $user->address = $request->address;
@@ -242,11 +242,16 @@ class ParentController extends Controller
         }
 
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'birth_date' => 'nullable|date',
-            'curp' => 'nullable|string|size:18',
-            'category' => 'nullable|string|max:255',
+            'first_name'    => 'required|string|max:255',
+            'last_name'     => 'required|string|max:255',
+            'birth_date'    => 'nullable|date',
+            'curp'          => ['nullable', 'string', function($attribute, $value, $fail) {
+                                    // If provided and non-empty, must be exactly 18 chars
+                                    if (!empty($value) && strlen($value) !== 18) {
+                                        $fail('El CURP debe tener exactamente 18 caracteres.');
+                                    }
+                                }],
+            'category'      => 'nullable|string|max:255',
             'jersey_number' => 'nullable|integer',
         ]);
 

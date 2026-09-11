@@ -39,7 +39,7 @@ class ParentManagementController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($parent->id)],
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:25',
             'password' => 'nullable|string|min:8',
         ]);
 
