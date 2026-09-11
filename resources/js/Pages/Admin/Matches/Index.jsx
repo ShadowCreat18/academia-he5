@@ -144,13 +144,13 @@ export default function Matches({ auth, games, players, categories, senderPhone 
 
         let uniformText = '';
         if (uniformColor) {
-            uniformText = `\n👕 Favor de presentarse con el uniforme: ${uniformColor}.`;
+            uniformText = `\nFavor de presentarse con el uniforme: ${uniformColor}.`;
             if (uniformImage) {
-                uniformText += `\n🖼️ Ver uniforme: ${uniformImage}`;
+                uniformText += `\nVer uniforme: ${uniformImage}`;
             }
         }
 
-        const defaultMsg = `⚽ ¡Hola! Te recordamos del próximo partido de la categoría ${game.category}.\n\n🆚 Rival: ${game.opponent}\n📅 Cuándo: ${formattedDate}\n📍 Dónde: ${game.location || 'Por confirmar'}${uniformText}\n\n¡Nos vemos en la cancha! 🏟️`;
+        const defaultMsg = `¡Hola! Te recordamos del próximo partido de la categoría ${game.category}.\n\nRival: ${game.opponent}\nCuándo: ${formattedDate}\nDónde: ${game.location || 'Por confirmar'}${uniformText}\n\n¡Nos vemos en la cancha!`;
         setWhatsappMessage(defaultMsg);
         setIsWhatsAppModalOpen(true);
     };

@@ -89,12 +89,12 @@ class GameController extends Controller
         $gameDate = \Carbon\Carbon::parse($game->date);
         $formattedDate = $gameDate->translatedFormat('l d \d\e F') . ' a las ' . $gameDate->format('h:i A');
 
-        $message = "🏆 *NUEVO PARTIDO PROGRAMADO* 🏆\n\n";
-        $message .= "⚽ *Categoría:* " . $game->category . "\n";
-        $message .= "🆚 *Rival:* " . $game->opponent . "\n";
-        $message .= "📅 *Fecha:* " . ucfirst($formattedDate) . "\n";
+        $message = "*NUEVO PARTIDO PROGRAMADO*\n\n";
+        $message .= "*Categoría:* " . $game->category . "\n";
+        $message .= "*Rival:* " . $game->opponent . "\n";
+        $message .= "*Fecha:* " . ucfirst($formattedDate) . "\n";
         if ($game->location) {
-            $message .= "📍 *Lugar:* " . $game->location . "\n";
+            $message .= "*Lugar:* " . $game->location . "\n";
         }
         if ($game->uniform_type) {
             $uniformColor = $game->uniform_type;
@@ -107,9 +107,9 @@ class GameController extends Controller
                 $uniformImage = asset('images/uniforme_visitante.jpg');
             }
             
-            $message .= "👕 *Uniforme:* " . $uniformColor . "\n";
+            $message .= "*Uniforme:* " . $uniformColor . "\n";
             if ($uniformImage) {
-                $message .= "🖼️ *Ver uniforme:* " . $uniformImage . "\n";
+                $message .= "*Ver uniforme:* " . $uniformImage . "\n";
             }
         }
         $message .= "\n¡Por favor confirmen asistencia y lleguen puntuales!";
