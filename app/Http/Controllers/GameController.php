@@ -85,14 +85,16 @@ class GameController extends Controller
         
         $phonesToNotify = array_keys($phonesToNotify);
 
-        // Format Date
+        // Format Date and Arrival Time
         $gameDate = \Carbon\Carbon::parse($game->date);
         $formattedDate = $gameDate->translatedFormat('l d \d\e F') . ' a las ' . $gameDate->format('h:i A');
+        $arrivalTime = $gameDate->copy()->subMinutes(30)->format('h:i A');
 
         $message = "*NUEVO PARTIDO PROGRAMADO*\n\n";
         $message .= "*Categoría:* " . $game->category . "\n";
         $message .= "*Rival:* " . $game->opponent . "\n";
         $message .= "*Fecha:* " . ucfirst($formattedDate) . "\n";
+        $message .= "*Hora de llegada:* " . $arrivalTime . " (30 minutos antes)\n";
         if ($game->location) {
             $message .= "*Lugar:* " . $game->location . "\n";
         }
@@ -112,7 +114,7 @@ class GameController extends Controller
                 $message .= "*Ver uniforme:* " . $uniformImage . "\n";
             }
         }
-        $message .= "\n¡Por favor confirmen asistencia y lleguen puntuales!";
+        $message .= "\nFavor de confirmar asistencia.";
 
         // Dispatch jobs with delay
         $delaySeconds = 0;

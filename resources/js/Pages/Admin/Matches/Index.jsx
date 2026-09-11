@@ -128,7 +128,11 @@ export default function Matches({ auth, games, players, categories, senderPhone 
         setSelectedGame(game);
         setConfirmedPlayers([]);
         setCopied(false);
-        const formattedDate = format(parseLocalDate(game.date), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es });
+        const dateObj = parseLocalDate(game.date);
+        const formattedDate = format(dateObj, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es });
+        
+        const arrivalDate = new Date(dateObj.getTime() - 30 * 60000);
+        const arrivalTime = format(arrivalDate, "h:mm a", { locale: es });
         
         let uniformColor = '';
         let uniformImage = '';
@@ -150,7 +154,7 @@ export default function Matches({ auth, games, players, categories, senderPhone 
             }
         }
 
-        const defaultMsg = `¡Hola! Te recordamos del próximo partido de la categoría ${game.category}.\n\nRival: ${game.opponent}\nCuándo: ${formattedDate}\nDónde: ${game.location || 'Por confirmar'}${uniformText}\n\n¡Nos vemos en la cancha!`;
+        const defaultMsg = `¡Hola! Te recordamos del próximo partido de la categoría ${game.category}.\n\nRival: ${game.opponent}\nCuándo: ${formattedDate}\nHora de llegada: ${arrivalTime} (30 minutos antes)\nDónde: ${game.location || 'Por confirmar'}${uniformText}\n\nFavor de confirmar asistencia.\n\n¡Nos vemos en la cancha!`;
         setWhatsappMessage(defaultMsg);
         setIsWhatsAppModalOpen(true);
     };
