@@ -63,11 +63,22 @@ class GameController extends Controller
         foreach ($players as $player) {
             foreach ($player->parents as $parent) {
                 if (!empty($parent->phone)) {
-                    $cleanPhone = preg_replace('/\D/', '', $parent->phone);
-                    if (strlen($cleanPhone) === 10) {
-                        $cleanPhone = '52' . $cleanPhone;
+                    $rawPhone = trim($parent->phone);
+                    // Check if it starts with + (international format like +593...)
+                    if (str_starts_with($rawPhone, '+')) {
+                        // Strip the + and keep everything else as-is (already has country code)
+                        $cleanPhone = preg_replace('/\D/', '', $rawPhone);
+                    } else {
+                        // Strip non-digits
+                        $cleanPhone = preg_replace('/\D/', '', $rawPhone);
+                        // If 10 digits, assume Mexican number and add country code
+                        if (strlen($cleanPhone) === 10) {
+                            $cleanPhone = '52' . $cleanPhone;
+                        }
                     }
-                    $phonesToNotify[$cleanPhone] = true; // Use array keys to get unique phones
+                    if (!empty($cleanPhone)) {
+                        $phonesToNotify[$cleanPhone] = true;
+                    }
                 }
             }
         }

@@ -330,7 +330,7 @@ export default function Index({ auth, parents, flash }) {
                                                     value={editForm.data.phone}
                                                     onChange={e => editForm.setData('phone', e.target.value)}
                                                     className="w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-slate-900"
-                                                    placeholder="10 dígitos"
+                                                    placeholder="Ej. 6141234567 o +593960957979"
                                                 />
                                                 {editForm.errors.phone && <p className="text-red-500 text-xs mt-1">{editForm.errors.phone}</p>}
                                             </div>

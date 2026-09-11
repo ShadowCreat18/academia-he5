@@ -705,10 +705,9 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                         value={parentForm.data.phone}
                                         onChange={e => parentForm.setData('phone', e.target.value)}
                                         className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#0033A0] outline-none text-slate-900 bg-white"
-                                        placeholder="Ej. 6141234567"
-                                        maxLength="15"
+                                        placeholder="Ej. 6141234567 o +593960957979"
                                     />
-                                    <p className="text-xs text-slate-400 mt-1">10 dígitos. Se usará para enviar avisos de partidos por WhatsApp.</p>
+                                    <p className="text-xs text-slate-400 mt-1">Número local (10 dígitos) o internacional con + (ej. +593...). Se usará para WhatsApp.</p>
                                 </div>
                                 {/* Selector de hijos */}
                                 {activeTab && activeTab !== 'Bajas / Inactivos' && playersByCategory[activeTab] && playersByCategory[activeTab].length > 0 && (

@@ -237,10 +237,16 @@ export default function Matches({ auth, games, players, categories, senderPhone 
 
     // Calculate WhatsApp Link
     const generateWhatsAppLink = (phone) => {
-        // Clean phone number (remove spaces, dashes, add +52 if not present)
-        let cleanPhone = phone.replace(/\D/g, '');
-        if (cleanPhone.length === 10) cleanPhone = '52' + cleanPhone;
-        
+        const raw = phone.trim();
+        let cleanPhone;
+        if (raw.startsWith('+')) {
+            // International format: strip the + but keep the country code digits
+            cleanPhone = raw.replace(/\D/g, '');
+        } else {
+            cleanPhone = raw.replace(/\D/g, '');
+            // If 10 digits, assume Mexican number
+            if (cleanPhone.length === 10) cleanPhone = '52' + cleanPhone;
+        }
         return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
     };
 
