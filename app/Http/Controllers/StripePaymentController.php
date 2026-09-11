@@ -345,6 +345,7 @@ class StripePaymentController extends Controller
     {
         $request->validate([
             'transaction_id' => 'required|exists:financial_transactions,id',
+            'amount' => 'nullable|numeric|min:1',
         ]);
 
         $user = Auth::user();
@@ -355,27 +356,35 @@ class StripePaymentController extends Controller
             return back()->with('info', 'Este concepto ya se encuentra liquidado.');
         }
 
-        if (($user->saldo_disponible ?? 0) < $debt) {
-            return back()->with('error', 'Saldo insuficiente en tu monedero digital.');
+        $amountToPay = $request->amount ? (float) $request->amount : $debt;
+        
+        if ($amountToPay > $debt) {
+            return back()->with('error', 'El monto no puede ser mayor a la deuda.');
         }
 
-        DB::transaction(function () use ($user, $transaction, $debt) {
-            $user->saldo_disponible -= $debt;
+        if (($user->saldo_disponible ?? 0) < $amountToPay) {
+            return back()->with('error', 'Saldo insuficiente en tu monedero digital para este monto.');
+        }
+
+        DB::transaction(function () use ($user, $transaction, $amountToPay) {
+            $user->saldo_disponible -= $amountToPay;
             $user->save();
 
             TransactionPayment::create([
                 'financial_transaction_id' => $transaction->id,
                 'user_id' => $user->id,
-                'amount' => $debt,
+                'amount' => $amountToPay,
                 'method' => 'wallet',
             ]);
 
-            $transaction->paid_amount += $debt;
-            $transaction->status = 'paid';
+            $transaction->paid_amount += $amountToPay;
+            if ($transaction->paid_amount >= $transaction->amount) {
+                $transaction->status = 'paid';
+            }
             $transaction->save();
         });
 
-        return back()->with('success', '¡Concepto pagado exitosamente con tu saldo a favor!');
+        return back()->with('success', '¡Abono de $'.$amountToPay.' realizado con éxito con tu monedero!');
     }
 
     /**

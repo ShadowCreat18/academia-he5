@@ -12,6 +12,10 @@ export default function Finances({ auth, children = [] }) {
     const [activeTab, setActiveTab] = useState('pendientes'); // 'pendientes' o 'historial'
     const [selectedTransactions, setSelectedTransactions] = useState([]);
 
+    const [walletModalOpen, setWalletModalOpen] = useState(false);
+    const [selectedWalletTx, setSelectedWalletTx] = useState(null);
+    const [walletAmount, setWalletAmount] = useState('');
+
     const userBalance = parseFloat(auth.user.saldo_disponible || 0);
 
     const handlePayWithStripe = async (payload, actionKey) => {
@@ -43,17 +47,7 @@ export default function Finances({ auth, children = [] }) {
         }
     };
 
-    const handlePayWithWallet = (transactionId) => {
-        if (!confirm('¿Deseas pagar este concepto con tu saldo disponible del monedero?')) {
-            return;
-        }
 
-        router.post(route('parent.wallet.pay'), {
-            transaction_id: transactionId,
-        }, {
-            preserveScroll: true,
-        });
-    };
 
     const handleTopupSubmit = (e) => {
         e.preventDefault();
@@ -163,6 +157,65 @@ export default function Finances({ auth, children = [] }) {
                                             <CreditCard className="w-4 h-4" />
                                             Continuar al Pago
                                         </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de Abono con Monedero */}
+                {walletModalOpen && selectedWalletTx && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto">
+                        <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setWalletModalOpen(false)}></div>
+                            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+                                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                    <h3 className="text-lg font-bold text-slate-800">Abonar con Monedero</h3>
+                                    <button onClick={() => setWalletModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const amount = parseFloat(walletAmount);
+                                    if(amount > 0 && amount <= selectedWalletTx.debt && amount <= userBalance) {
+                                        router.post(route('parent.wallet.pay'), {
+                                            transaction_id: selectedWalletTx.id,
+                                            amount: amount
+                                        }, { preserveScroll: true, onSuccess: () => setWalletModalOpen(false) });
+                                    }
+                                }} className="p-6 space-y-4">
+                                    <p className="text-sm text-slate-600">
+                                        Concepto: <strong>{selectedWalletTx.concept}</strong><br/>
+                                        Deuda Pendiente: <strong>${selectedWalletTx.debt.toFixed(2)}</strong><br/>
+                                        Tu Saldo Disponible: <strong className="text-green-600">${userBalance.toFixed(2)}</strong>
+                                    </p>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Monto a Abonar</label>
+                                        <div className="relative rounded-xl shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-slate-500 font-bold">$</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="1"
+                                                max={Math.min(selectedWalletTx.debt, userBalance)}
+                                                value={walletAmount}
+                                                onChange={e => setWalletAmount(e.target.value)}
+                                                className="w-full pl-8 pr-12 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-bold text-slate-900"
+                                                required
+                                            />
+                                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                <span className="text-xs font-semibold text-slate-400">MXN</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-2 pt-3">
+                                        <button type="button" onClick={() => setWalletModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                                        <button type="submit" className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow">Aplicar Abono</button>
                                     </div>
                                 </form>
                             </div>
@@ -299,9 +352,23 @@ export default function Finances({ auth, children = [] }) {
                                                                         <h4 className={`font-bold text-sm ${isSelected ? 'text-[#E31837]' : 'text-slate-800'}`}>
                                                                             {tx.concept}
                                                                         </h4>
-                                                                        <p className="font-bold text-slate-800 text-sm">
-                                                                            ${tx.amount}
-                                                                        </p>
+                                                                        <div className="text-right">
+                                                                            <p className="font-bold text-slate-800 text-sm">
+                                                                                ${tx.amount}
+                                                                            </p>
+                                                                            {userBalance > 0 && !isPaid && (
+                                                                                <button 
+                                                                                    onClick={() => {
+                                                                                        setSelectedWalletTx({ id: tx.id, debt, concept: tx.concept });
+                                                                                        setWalletAmount(Math.min(userBalance, debt).toString());
+                                                                                        setWalletModalOpen(true);
+                                                                                    }}
+                                                                                    className="text-[10px] bg-green-100 hover:bg-green-200 text-green-800 px-2 py-0.5 mt-1 rounded font-semibold transition"
+                                                                                >
+                                                                                    Abonar con saldo
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                     <div className="flex justify-between items-center text-xs">
                                                                         <span className="text-slate-500">
