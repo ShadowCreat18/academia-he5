@@ -234,7 +234,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                             Monedero Digital HE-5
                         </h2>
                         <p className="text-green-700 text-sm max-w-xl">
-                            Puedes usar este saldo a favor para liquidar adeudos de tus hijos al instante sin comisiones adicionales, o recargar saldo con tarjeta (aplica cargo por servicio al recargar).
+                            Puedes usar este saldo a favor para liquidar adeudos de tus hijos al instante. Ten en cuenta que los pagos y recargas con tarjeta generan una comisión por servicio.
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
