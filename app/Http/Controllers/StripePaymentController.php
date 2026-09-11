@@ -398,6 +398,11 @@ class StripePaymentController extends Controller
         $sigHeader = $request->header('Stripe-Signature');
         $webhookSecret = config('services.stripe.webhook_secret');
 
+        Log::info('Stripe Webhook Recibido', [
+            'sigHeader' => $sigHeader ? 'Presente' : 'Vacio',
+            'secretLength' => strlen($webhookSecret)
+        ]);
+
         if (!$webhookSecret) {
             Log::warning('Stripe webhook secret no configurado.');
             return response()->json(['error' => 'Webhook not configured'], 500);
@@ -405,8 +410,12 @@ class StripePaymentController extends Controller
 
         try {
             $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
+            Log::info('Stripe webhook validado exitosamente: ' . $event->type);
+        } catch (\UnexpectedValueException $e) {
+            Log::warning('Stripe webhook payload inválido: ' . $e->getMessage());
+            return response()->json(['error' => 'Invalid payload'], 400);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            Log::warning('Stripe webhook firma inválida: ' . $e->getMessage());
+            Log::warning('Stripe webhook firma inválida. Error exacto: ' . $e->getMessage());
             return response()->json(['error' => 'Invalid signature'], 400);
         }
 
