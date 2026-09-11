@@ -129,7 +129,27 @@ export default function Matches({ auth, games, players, categories, senderPhone 
         setConfirmedPlayers([]);
         setCopied(false);
         const formattedDate = format(parseLocalDate(game.date), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es });
-        const uniformText = game.uniform_type ? `\nFavor de presentarse con el uniforme: ${game.uniform_type}.` : '';
+        
+        let uniformColor = '';
+        let uniformImage = '';
+        if (game.uniform_type === 'Local (Rojo)') {
+            uniformColor = 'Rojo';
+            uniformImage = `${window.location.origin}/images/uniforme_local.jpg`;
+        } else if (game.uniform_type === 'Visitante (Negro)') {
+            uniformColor = 'Negro';
+            uniformImage = `${window.location.origin}/images/uniforme_visitante.jpg`;
+        } else if (game.uniform_type) {
+            uniformColor = game.uniform_type;
+        }
+
+        let uniformText = '';
+        if (uniformColor) {
+            uniformText = `\n👕 Favor de presentarse con el uniforme: ${uniformColor}.`;
+            if (uniformImage) {
+                uniformText += `\n🖼️ Ver uniforme: ${uniformImage}`;
+            }
+        }
+
         const defaultMsg = `⚽ ¡Hola! Te recordamos del próximo partido de la categoría ${game.category}.\n\n🆚 Rival: ${game.opponent}\n📅 Cuándo: ${formattedDate}\n📍 Dónde: ${game.location || 'Por confirmar'}${uniformText}\n\n¡Nos vemos en la cancha! 🏟️`;
         setWhatsappMessage(defaultMsg);
         setIsWhatsAppModalOpen(true);

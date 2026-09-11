@@ -86,7 +86,20 @@ class GameController extends Controller
             $message .= "📍 *Lugar:* " . $game->location . "\n";
         }
         if ($game->uniform_type) {
-            $message .= "👕 *Uniforme:* " . $game->uniform_type . "\n";
+            $uniformColor = $game->uniform_type;
+            $uniformImage = '';
+            if ($game->uniform_type === 'Local (Rojo)') {
+                $uniformColor = 'Rojo';
+                $uniformImage = asset('images/uniforme_local.jpg');
+            } elseif ($game->uniform_type === 'Visitante (Negro)') {
+                $uniformColor = 'Negro';
+                $uniformImage = asset('images/uniforme_visitante.jpg');
+            }
+            
+            $message .= "👕 *Uniforme:* " . $uniformColor . "\n";
+            if ($uniformImage) {
+                $message .= "🖼️ *Ver uniforme:* " . $uniformImage . "\n";
+            }
         }
         $message .= "\n¡Por favor confirmen asistencia y lleguen puntuales!";
 

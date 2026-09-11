@@ -12,7 +12,7 @@ class Game extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'datetime:Y-m-d\TH:i:s',
     ];
 
     public function goals()
