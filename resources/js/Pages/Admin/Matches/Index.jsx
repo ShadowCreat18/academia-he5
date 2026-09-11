@@ -126,7 +126,7 @@ export default function Matches({ auth, games, players, categories, senderPhone 
 
     const openWhatsAppModal = (game) => {
         setSelectedGame(game);
-        setConfirmedPlayers([]);
+        setConfirmedPlayers(game.notified_players || []);
         setCopied(false);
         const dateObj = parseLocalDate(game.date);
         const formattedDate = format(dateObj, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es });
@@ -167,10 +167,16 @@ export default function Matches({ auth, games, players, categories, senderPhone 
     };
 
     const toggleConfirmed = (playerId) => {
+        let newConfirmed = [];
         if (confirmedPlayers.includes(playerId)) {
-            setConfirmedPlayers(confirmedPlayers.filter(id => id !== playerId));
+            newConfirmed = confirmedPlayers.filter(id => id !== playerId);
         } else {
-            setConfirmedPlayers([...confirmedPlayers, playerId]);
+            newConfirmed = [...confirmedPlayers, playerId];
+        }
+        setConfirmedPlayers(newConfirmed);
+        
+        if (selectedGame) {
+            axios.put(route('matches.notified', selectedGame.id), { notified_players: newConfirmed }).catch(err => console.error(err));
         }
     };
 
@@ -790,11 +796,16 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {playersInCategory.map(player => {
-                                        const parentsList = player.parents || [];
-                                        const isConfirmed = confirmedPlayers.includes(player.id);
-                                        
-                                        return (
+                                    {playersInCategory.filter(player => !confirmedPlayers.includes(player.id)).length === 0 ? (
+                                        <div className="col-span-2 text-center py-4 text-slate-500 bg-slate-100 rounded-xl text-sm">
+                                            ¡Todos los jugadores han sido notificados o confirmados! 🎉
+                                        </div>
+                                    ) : (
+                                        playersInCategory.filter(player => !confirmedPlayers.includes(player.id)).map(player => {
+                                            const parentsList = player.parents || [];
+                                            const isConfirmed = false;
+                                            
+                                            return (
                                             <div key={player.id} className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                                                 isConfirmed 
                                                 ? 'bg-green-50 border-green-200 opacity-70' 
@@ -848,7 +859,8 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                                                 )}
                                             </div>
                                         );
-                                    })}
+                                    })
+                                    )}
                                 </div>
 
                                 {playersInCategory.length > 0 && (

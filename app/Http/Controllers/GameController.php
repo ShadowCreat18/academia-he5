@@ -244,4 +244,17 @@ class GameController extends Controller
 
         return back()->with('success', 'Asistencia y arbitraje procesado exitosamente.');
     }
+
+    public function updateNotifiedPlayers(Request $request, Game $game)
+    {
+        $request->validate([
+            'notified_players' => 'array'
+        ]);
+
+        $game->update([
+            'notified_players' => $request->notified_players
+        ]);
+
+        return back()->with('success', 'Jugadores notificados actualizados.');
+    }
 }

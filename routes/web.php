@@ -90,6 +90,7 @@ Route::middleware(['auth', 'throttle:60,1', 'role:admin'])->group(function () {
 
     // Matches/Games
     Route::post('/matches/{game}/arbitration', [\App\Http\Controllers\GameController::class, 'processArbitration'])->name('matches.arbitration');
+    Route::put('/matches/{game}/notified', [\App\Http\Controllers\GameController::class, 'updateNotifiedPlayers'])->name('matches.notified');
     Route::resource('matches', \App\Http\Controllers\GameController::class)->except(['create', 'show', 'edit'])->parameters(['matches' => 'game']);
 });
 

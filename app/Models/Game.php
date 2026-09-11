@@ -13,6 +13,7 @@ class Game extends Model
 
     protected $casts = [
         'date' => 'datetime:Y-m-d\TH:i:s',
+        'notified_players' => 'array',
     ];
 
     public function goals()
