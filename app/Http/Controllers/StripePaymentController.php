@@ -22,13 +22,14 @@ class StripePaymentController extends Controller
     }
 
     /**
-     * Calcula el cobro bruto para que la academia reciba: Monto Original + 10% de comisión.
+     * Calcula el cobro bruto para que la academia reciba: Monto Original + $15 MXN de ganancia fija.
      * Toma en cuenta la comisión de Stripe (3.6% + $3 MXN).
      */
     private function calculateGrossAmount($originalAmount)
     {
-        // 1. Queremos que la academia reciba el monto original + 10%
-        $desiredNet = $originalAmount * 1.10;
+        // 1. Queremos que la academia reciba el monto original + una ganancia fija ($15 MXN)
+        $fixedProfit = 15;
+        $desiredNet = $originalAmount + $fixedProfit;
         
         // 2. Stripe cobra 3.6% sobre el Total + $3 MXN.
         // Fórmula matemática: Total = (Neto Deseado + 3) / (1 - 0.036)
