@@ -408,22 +408,21 @@ class StripePaymentController extends Controller
             return response()->json(['error' => 'Webhook not configured'], 500);
         }
 
+        $payloadArray = json_decode($payload, true);
+        if (!isset($payloadArray['id'])) {
+            return response()->json(['error' => 'Invalid payload format'], 400);
+        }
+
         try {
-            $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
-            Log::info('Stripe webhook validado exitosamente: ' . $event->type);
-        } catch (\UnexpectedValueException $e) {
-            Log::warning('Stripe webhook payload inválido: ' . $e->getMessage());
-            return response()->json(['error' => 'Invalid payload'], 400);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            Log::warning('Stripe webhook firma inválida. Error exacto: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Invalid signature',
-                'debug' => [
-                    'header_received' => $sigHeader ?: 'NULL_OR_EMPTY',
-                    'secret_length' => strlen($webhookSecret),
-                    'payload_length' => strlen($payload),
-                ]
-            ], 400);
+            // Solución robusta para Hostinger: 
+            // En lugar de verificar la firma (que falla porque Hostinger modifica el payload),
+            // le preguntamos directamente a Stripe si el evento es real.
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+            $event = \Stripe\Event::retrieve($payloadArray['id']);
+            Log::info('Stripe webhook evento recuperado exitosamente: ' . $event->type);
+        } catch (\Exception $e) {
+            Log::warning('Stripe webhook error recuperando evento: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not verify event with Stripe'], 400);
         }
 
         // Solo procesamos checkout sessions completadas
