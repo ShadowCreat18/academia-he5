@@ -56,7 +56,7 @@ export default function Index({ auth, parents, flash }) {
 
     const handleEditSubmit = (e) => {
         e.preventDefault();
-        editForm.put(route('admin.parents.update', editingParent.id), {
+        editForm.put(route('parents.update', editingParent.id), {
             onSuccess: () => {
                 setEditingParent(null);
                 editForm.reset();
@@ -66,7 +66,7 @@ export default function Index({ auth, parents, flash }) {
 
     const handleDelete = (parent) => {
         if (confirm(`¿Estás seguro de que deseas eliminar al tutor "${parent.name}"? Esta acción no se puede deshacer y fallará si tienen historial de cobros.`)) {
-            router.delete(route('admin.parents.destroy', parent.id), {
+            router.delete(route('parents.destroy', parent.id), {
                 preserveScroll: true
             });
         }
