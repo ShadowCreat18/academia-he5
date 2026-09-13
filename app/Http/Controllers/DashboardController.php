@@ -41,7 +41,9 @@ class DashboardController extends Controller
             // Stats totales (Global)
             $categoriesStats['General'] = [
                 'activePlayers' => $players->count(),
-                'income' => $transactions->sum('paid_amount'), // Podría limitarse al mes actual
+                'income' => $transactions->where('is_arbitration_penalty', false)->filter(function($tx) {
+                    return !str_contains(strtolower($tx->concept), 'arbitraje');
+                })->sum('paid_amount'), // Ingresos globales excluyendo arbitraje
                 'overdue' => $transactions->where('status', '!=', 'paid')->sum(function($tx) {
                     return max(0, $tx->amount - $tx->paid_amount);
                 }),
@@ -54,16 +56,79 @@ class DashboardController extends Controller
 
                 $categoriesStats[$cat] = [
                     'activePlayers' => $catPlayers->count(),
-                    'income' => $catTxs->sum('paid_amount'),
+                    'income' => $catTxs->where('is_arbitration_penalty', false)->filter(function($tx) {
+                        return !str_contains(strtolower($tx->concept), 'arbitraje');
+                    })->sum('paid_amount'),
                     'overdue' => $catTxs->where('status', '!=', 'paid')->sum(function($tx) {
                         return max(0, $tx->amount - $tx->paid_amount);
                     }),
                 ];
             }
 
+            // Calcular ingresos mensuales y distribución para las gráficas
+            $payments = \App\Models\TransactionPayment::with('financialTransaction')
+                ->whereNotNull('financial_transaction_id')
+                ->get();
+            
+            // Excluir arbitrajes de los pagos
+            $validPayments = $payments->filter(function($payment) {
+                $tx = $payment->financialTransaction;
+                if (!$tx) return false;
+                if ($tx->is_arbitration_penalty) return false;
+                if (str_contains(strtolower($tx->concept), 'arbitraje')) return false;
+                return true;
+            });
+
+            // Agrupar por mes (año actual)
+            $currentYear = Carbon::now()->year;
+            $monthlyIncome = [
+                'Ene' => 0, 'Feb' => 0, 'Mar' => 0, 'Abr' => 0, 'May' => 0, 'Jun' => 0,
+                'Jul' => 0, 'Ago' => 0, 'Sep' => 0, 'Oct' => 0, 'Nov' => 0, 'Dic' => 0
+            ];
+            $monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            foreach ($validPayments as $payment) {
+                $date = Carbon::parse($payment->created_at);
+                if ($date->year == $currentYear) {
+                    $monthStr = $monthNames[$date->month - 1];
+                    $monthlyIncome[$monthStr] += (float) $payment->amount;
+                }
+            }
+
+            // Formatear para recharts
+            $monthlyChartData = [];
+            foreach ($monthlyIncome as $month => $total) {
+                $monthlyChartData[] = ['name' => $month, 'total' => round($total, 2)];
+            }
+
+            // Agrupar por concepto (Gráfica circular)
+            $distributionData = [];
+            foreach ($validPayments as $payment) {
+                $concept = $payment->financialTransaction->concept;
+                // Agrupar por la primera palabra clave para limpiar la gráfica (ej. Mensualidad Octubre -> Mensualidad)
+                $firstWord = explode(' ', trim($concept))[0]; 
+                // Estandarizar un poco (Mensualidad, Inscripción, Uniforme, Torneo)
+                $groupName = ucfirst(strtolower($firstWord));
+
+                if (!isset($distributionData[$groupName])) {
+                    $distributionData[$groupName] = 0;
+                }
+                $distributionData[$groupName] += (float) $payment->amount;
+            }
+
+            $pieChartData = [];
+            foreach ($distributionData as $name => $value) {
+                if ($value > 0) {
+                    $pieChartData[] = ['name' => $name, 'value' => round($value, 2)];
+                }
+            }
+            usort($pieChartData, function($a, $b) { return $b['value'] <=> $a['value']; });
+
             return Inertia::render('Admin/Dashboard', [
                 'categoriesStats' => $categoriesStats,
                 'topDebtors' => $topDebtors,
+                'monthlyChartData' => $monthlyChartData,
+                'pieChartData' => $pieChartData,
                 'whatsappPhone' => \App\Models\Setting::getVal('whatsapp_sender_phone', '4921226800'),
             ]);
         }

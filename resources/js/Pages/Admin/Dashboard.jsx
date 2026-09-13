@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { Users, LogOut, DollarSign, Activity, FileText, Trophy, Wallet, Settings, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Users, LogOut, DollarSign, Activity, FileText, Trophy, Wallet, Settings, AlertTriangle, MessageCircle, BarChart2, PieChart as PieChartIcon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-export default function Dashboard({ auth, categoriesStats = {}, ...props }) {
+export default function Dashboard({ auth, categoriesStats = {}, monthlyChartData = [], pieChartData = [], ...props }) {
     const categories = Object.keys(categoriesStats);
     const [activeTab, setActiveTab] = useState('General');
 
@@ -10,6 +11,8 @@ export default function Dashboard({ auth, categoriesStats = {}, ...props }) {
 
     const topDebtors = props.topDebtors || [];
     const whatsappPhone = props.whatsappPhone || '4921226800';
+
+    const PIE_COLORS = ['#0033A0', '#E31837', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6'];
 
     const generateWhatsAppLink = (player) => {
         let parentPhone = player.parents && player.parents.length > 0 && player.parents[0].phone ? player.parents[0].phone : '';
@@ -121,6 +124,72 @@ export default function Dashboard({ auth, categoriesStats = {}, ...props }) {
                         <div>
                             <p className="text-sm text-slate-500 font-medium">Cartera Vencida</p>
                             <p className="text-2xl font-bold text-slate-800">${parseFloat(currentStats.overdue).toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Panel de Gráficas ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    {/* Gráfica de Ganancias Mensuales */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex items-center space-x-2 text-slate-800 mb-6">
+                            <BarChart2 className="w-5 h-5 text-blue-600" />
+                            <h3 className="text-lg font-bold">Ganancias Mensuales</h3>
+                        </div>
+                        <div className="h-72">
+                            {monthlyChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={monthlyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(value) => `$${value}`} />
+                                        <RechartsTooltip 
+                                            cursor={{fill: '#f1f5f9'}}
+                                            contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                                            formatter={(value) => [`$${value}`, 'Ingresos']}
+                                        />
+                                        <Bar dataKey="total" fill="#0033A0" radius={[4, 4, 0, 0]} barSize={30} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-slate-400">Sin datos registrados este año</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Gráfica Circular de Conceptos */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex items-center space-x-2 text-slate-800 mb-6">
+                            <PieChartIcon className="w-5 h-5 text-emerald-600" />
+                            <h3 className="text-lg font-bold">Distribución de Ingresos (Conceptos)</h3>
+                        </div>
+                        <div className="h-72 flex items-center justify-center">
+                            {pieChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={90}
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
+                                            {pieChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip 
+                                            contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                                            formatter={(value) => [`$${value}`, 'Total']}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '12px'}} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-slate-400">Sin datos de conceptos</div>
+                            )}
                         </div>
                     </div>
                 </div>
