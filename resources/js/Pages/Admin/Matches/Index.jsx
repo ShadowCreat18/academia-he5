@@ -943,7 +943,8 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                                 </div>
                                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center rounded-b-2xl">
                                     <div className="text-sm font-medium text-slate-600">
-                                        Pagados: {arbData.paid_players.length} / {playersInCategory.length}
+                                        <div>Pagados: {arbData.paid_players.length} / {playersInCategory.length}</div>
+                                        <div className="text-green-600 font-bold mt-1">Recaudado hoy: ${arbData.paid_players.length * 50}</div>
                                     </div>
                                     <div className="flex gap-3">
                                         <button

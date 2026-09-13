@@ -203,6 +203,21 @@ class GameController extends Controller
                 })->get();
 
             foreach ($players as $player) {
+                // Exentar a Cristobal y Miguel Angel en la categoría Pony
+                $isPony = strtolower(trim($game->category)) === 'pony';
+                $firstNameClean = strtolower(str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $player->first_name));
+                $isExempt = $isPony && (str_contains($firstNameClean, 'cristobal') || str_contains($firstNameClean, 'miguel angel'));
+
+                if ($isExempt) {
+                    // Si por error se les había creado, lo eliminamos
+                    $existingTransaction = FinancialTransaction::where('player_id', $player->id)->where('game_id', $game->id)->first();
+                    if ($existingTransaction) {
+                        $existingTransaction->transactionPayments()->delete();
+                        $existingTransaction->delete();
+                    }
+                    continue;
+                }
+
                 $hasPaid = in_array($player->id, $paidPlayerIds);
                 
                 $transaction = FinancialTransaction::firstOrNew([
