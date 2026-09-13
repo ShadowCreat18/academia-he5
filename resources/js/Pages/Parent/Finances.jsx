@@ -205,6 +205,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                                                 max={Math.min(selectedWalletTx.debt, userBalance)}
                                                 value={walletAmount}
                                                 onChange={e => setWalletAmount(e.target.value)}
+                                                placeholder={`Max: $${Math.min(selectedWalletTx.debt, userBalance).toFixed(2)}`}
                                                 className="w-full pl-8 pr-12 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-bold text-slate-900"
                                                 required
                                             />
@@ -409,7 +410,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                                                                                     <button 
                                                                                         onClick={() => {
                                                                                             setSelectedWalletTx({ id: tx.id, debt, concept: tx.concept });
-                                                                                            setWalletAmount(Math.min(userBalance, debt).toString());
+                                                                                            setWalletAmount('');
                                                                                             setWalletModalOpen(true);
                                                                                         }}
                                                                                         className="text-[10px] bg-green-100 hover:bg-green-200 text-green-800 px-2 py-0.5 mt-1 rounded font-semibold transition"
