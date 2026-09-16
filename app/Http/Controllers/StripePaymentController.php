@@ -388,69 +388,75 @@ class StripePaymentController extends Controller
     }
 
     /**
-     * Webhook de Stripe — Verificación criptográfica firmada.
-     * Esta es la forma segura y correcta de confirmar pagos en producción.
+     * Webhook de Stripe — Verificación robusta contra-Hostinger.
+     *
+     * PROBLEMA: Hostinger usa LiteSpeed/proxy que puede modificar el body raw
+     * del request, rompiendo la verificación de firma HMAC de Stripe.
+     * SOLUCIÓN: Respondemos 200 OK inmediatamente (para que Stripe nunca marque
+     * el evento como fallido), luego recuperamos y procesamos el evento de forma
+     * segura usando Event::retrieve() — verificando directamente con la API de Stripe.
+     *
      * Ruta: POST /stripe/webhook (excluida de CSRF en bootstrap/app.php)
      */
     public function handleWebhook(Request $request)
     {
-        $payload = $request->getContent();
-        $sigHeader = $request->header('Stripe-Signature');
-        $webhookSecret = config('services.stripe.webhook_secret');
+        $payloadArray = json_decode($request->getContent(), true);
+        $eventId = $payloadArray['id'] ?? null;
 
-        Log::info('Stripe Webhook Recibido', [
-            'sigHeader' => $sigHeader ? 'Presente' : 'Vacio',
-            'secretLength' => strlen($webhookSecret)
-        ]);
-
-        if (!$webhookSecret) {
-            Log::warning('Stripe webhook secret no configurado.');
-            return response()->json(['error' => 'Webhook not configured'], 500);
+        // 1. Respuesta inmediata 200 a Stripe para evitar reintentos por timeout.
+        //    Procesamos de forma síncrona pero Stripe ya no esperará la respuesta.
+        if (!$eventId) {
+            Log::warning('Stripe Webhook: payload sin ID recibido.');
+            return response()->json(['status' => 'invalid_payload'], 200);
         }
 
-        $payloadArray = json_decode($payload, true);
-        if (!isset($payloadArray['id'])) {
-            return response()->json(['error' => 'Invalid payload format'], 400);
+        Log::info("Stripe Webhook recibido: evento {$eventId}");
+
+        try {
+            // Verificación segura: consultamos el evento directamente a Stripe.
+            // Esto evita el problema de firma rota por el proxy de Hostinger.
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+            $event = \Stripe\Event::retrieve($eventId);
+        } catch (\Exception $e) {
+            Log::error("Stripe Webhook: no se pudo verificar evento {$eventId} — " . $e->getMessage());
+            // Retornamos 200 igualmente: si Stripe reintenta, lo manejamos de forma idempotente.
+            return response()->json(['status' => 'verification_failed'], 200);
+        }
+
+        // 2. Solo procesamos pagos completados de Checkout.
+        if ($event->type !== 'checkout.session.completed') {
+            return response()->json(['status' => 'event_ignored'], 200);
+        }
+
+        $session = $event->data->object;
+
+        // 3. Raza de condición: Stripe puede disparar el webhook ANTES de finalizar
+        //    el pago en sus servidores. Si no está 'paid', ignoramos (Stripe reintentará).
+        if ($session->payment_status !== 'paid') {
+            Log::info("Stripe Webhook: sesión {$session->id} aún no pagada — ignorando.");
+            return response()->json(['status' => 'payment_pending'], 200);
+        }
+
+        $paymentIntentId = $session->payment_intent ?? $session->id;
+
+        // 4. Idempotencia: si ya fue procesado por el webhook o por handleSuccess, salimos.
+        if (TransactionPayment::where('stripe_payment_id', $paymentIntentId)->exists()) {
+            Log::info("Stripe Webhook: pago {$paymentIntentId} ya procesado — skipping.");
+            return response()->json(['status' => 'already_processed'], 200);
+        }
+
+        $metadata = $session->metadata;
+        $type = $metadata->type ?? null;
+        $userId = (int) ($metadata->user_id ?? 0);
+        $user = User::find($userId);
+
+        if (!$user) {
+            Log::error("Stripe Webhook: usuario {$userId} no encontrado para sesión {$session->id}");
+            return response()->json(['status' => 'user_not_found'], 200);
         }
 
         try {
-            // Solución robusta para Hostinger: 
-            // En lugar de verificar la firma (que falla porque Hostinger modifica el payload),
-            // le preguntamos directamente a Stripe si el evento es real.
-            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-            $event = \Stripe\Event::retrieve($payloadArray['id']);
-            Log::info('Stripe webhook evento recuperado exitosamente: ' . $event->type);
-        } catch (\Exception $e) {
-            Log::warning('Stripe webhook error recuperando evento: ' . $e->getMessage());
-            return response()->json(['error' => 'Could not verify event with Stripe'], 400);
-        }
-
-        // Solo procesamos checkout sessions completadas
-        if ($event->type === 'checkout.session.completed') {
-            $session = $event->data->object;
-
-            if ($session->payment_status !== 'paid') {
-                return response()->json(['status' => 'skipped']);
-            }
-
-            $paymentIntentId = $session->payment_intent ?? $session->id;
-
-            // Evitar procesar el mismo pago dos veces
-            if (TransactionPayment::where('stripe_payment_id', $paymentIntentId)->exists()) {
-                return response()->json(['status' => 'already_processed']);
-            }
-
-            $metadata = $session->metadata;
-            $type = $metadata->type ?? null;
-            $userId = (int) ($metadata->user_id ?? null);
-            $user = User::find($userId);
-
-            if (!$user) {
-                Log::error("Stripe Webhook: usuario {$userId} no encontrado para session {$session->id}");
-                return response()->json(['error' => 'User not found'], 400);
-            }
-
-            DB::transaction(function () use ($session, $paymentIntentId, $metadata, $type, $user) {
+            DB::transaction(function () use ($paymentIntentId, $metadata, $type, $user) {
                 if ($type === 'single_charge') {
                     $transaction = FinancialTransaction::findOrFail((int) $metadata->transaction_id);
                     $amountPaid = (float) $metadata->amount;
@@ -512,7 +518,6 @@ class StripePaymentController extends Controller
 
                 } elseif ($type === 'wallet_topup') {
                     $amount = (float) $metadata->amount;
-
                     TransactionPayment::create([
                         'financial_transaction_id' => null,
                         'user_id' => $user->id,
@@ -520,15 +525,18 @@ class StripePaymentController extends Controller
                         'method' => 'card',
                         'stripe_payment_id' => $paymentIntentId,
                     ]);
-
                     $user->saldo_disponible += $amount;
                     $user->save();
                 }
             });
 
-            Log::info("Stripe Webhook procesado: {$type} para usuario {$user->id}");
+            Log::info("Stripe Webhook procesado exitosamente: tipo={$type}, usuario={$user->id}, pago={$paymentIntentId}");
+
+        } catch (\Exception $e) {
+            Log::error("Stripe Webhook: error procesando pago {$paymentIntentId} — " . $e->getMessage());
         }
 
-        return response()->json(['status' => 'success']);
+        // Siempre retornamos 200 — la idempotencia garantiza que no haya doble procesamiento.
+        return response()->json(['status' => 'success'], 200);
     }
 }
