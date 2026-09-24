@@ -150,39 +150,39 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         return 'Otros';
     };
 
-    const transactionsByCategory = {};
+    const transactionsByYear = {};
     transactions.forEach(tx => {
-        const year = tx.due_date ? tx.due_date.substring(0, 4) : new Date().getFullYear();
-        const baseCat = getConceptCategory(tx.concept);
-        const cat = `${year} - ${baseCat}`;
-        if (!transactionsByCategory[cat]) transactionsByCategory[cat] = [];
-        transactionsByCategory[cat].push(tx);
+        const year = tx.due_date ? tx.due_date.substring(0, 4) : String(new Date().getFullYear());
+        const cat = getConceptCategory(tx.concept);
+        
+        if (!transactionsByYear[year]) {
+            transactionsByYear[year] = {};
+        }
+        if (!transactionsByYear[year][cat]) {
+            transactionsByYear[year][cat] = [];
+        }
+        transactionsByYear[year][cat].push(tx);
     });
     
-    // Sort logic: Year descending (2025 before 2024), then Mensualidades first, then alphabetical
-    const sortedCategories = Object.keys(transactionsByCategory).sort((a, b) => {
-        const yearA = a.split(' - ')[0];
-        const yearB = b.split(' - ')[0];
-        
-        if (yearA !== yearB) {
-            return yearB.localeCompare(yearA);
-        }
-        
-        const catA = a.split(' - ')[1] || '';
-        const catB = b.split(' - ')[1] || '';
-        
-        if (catA === 'Mensualidades') return -1;
-        if (catB === 'Mensualidades') return 1;
-        return catA.localeCompare(catB);
-    });
+    // Sort logic: Year descending
+    const sortedYears = Object.keys(transactionsByYear).sort((a, b) => b.localeCompare(a));
 
     useEffect(() => {
-        if (selectedPlayerId && sortedCategories.length > 0 && !activeTab) {
-            setActiveTab(sortedCategories[0]);
+        if (selectedPlayerId && sortedYears.length > 0 && !activeTab) {
+            setActiveTab(sortedYears[0]);
         } else if (!selectedPlayerId) {
             setActiveTab(null);
         }
-    }, [selectedPlayerId, sortedCategories]);
+    }, [selectedPlayerId, sortedYears]);
+
+    const getSortedCategoriesForYear = (year) => {
+        if (!transactionsByYear[year]) return [];
+        return Object.keys(transactionsByYear[year]).sort((a, b) => {
+            if (a === 'Mensualidades') return -1;
+            if (b === 'Mensualidades') return 1;
+            return a.localeCompare(b);
+        });
+    };
 
     const selectPlayer = (playerId) => {
         router.get('/finances', { player_id: playerId }, { preserveState: true, preserveScroll: true });
@@ -547,36 +547,35 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 );
                             })()}
 
-                            {/* Tabs por categoría */}
+                            {/* Tabs por Año */}
                             {transactions.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {sortedCategories.map(cat => (
+                                    {sortedYears.map(year => (
                                         <button
-                                            key={cat}
-                                            onClick={() => setActiveTab(cat)}
+                                            key={year}
+                                            onClick={() => setActiveTab(year)}
                                             className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
-                                                activeTab === cat 
+                                                activeTab === year 
                                                 ? 'bg-[#0033A0] text-white shadow-md' 
                                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                             }`}
                                         >
-                                            {cat}
+                                            {year}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            {/* Tabla de transacciones de la categoría activa */}
+                            {/* Tablas de transacciones del año activo */}
                             {transactions.length === 0 ? (
                                 <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-12 text-center text-slate-400">
                                     <DollarSign className="mx-auto w-12 h-12 mb-3 text-slate-300" />
                                     <p>Este jugador no tiene cargos registrados.</p>
                                 </div>
                             ) : (
-                                activeTab && transactionsByCategory[activeTab] && (
-                                    (() => {
-                                        const cat = activeTab;
-                                        const catTxs = transactionsByCategory[cat];
+                                activeTab && transactionsByYear[activeTab] && (
+                                    getSortedCategoriesForYear(activeTab).map(cat => {
+                                        const catTxs = transactionsByYear[activeTab][cat];
                                         const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
                                         const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
                                         const catPending = catTotal - catPaid;
@@ -584,65 +583,65 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                             <div key={cat} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
                                                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-2">
                                                     <h3 className="font-bold text-lg text-slate-700">📂 {cat}</h3>
-                                                <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-                                                    <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
-                                                    <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
-                                                    <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
+                                                    <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                                                        <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
+                                                        <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                                                        <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="bg-slate-50/50 text-slate-600 border-b border-slate-200">
+                                                            <tr>
+                                                                <th className="px-4 py-3 text-left font-semibold">Concepto</th>
+                                                                <th className="px-4 py-3 text-right font-semibold">Monto</th>
+                                                                <th className="px-4 py-3 text-right font-semibold">Pagado</th>
+                                                                <th className="px-4 py-3 text-right font-semibold">Pendiente</th>
+                                                                <th className="px-4 py-3 text-center font-semibold">Estado</th>
+                                                                <th className="px-4 py-3 text-center font-semibold">Fecha</th>
+                                                                <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100">
+                                                            {catTxs.map(tx => {
+                                                                const remaining = Math.max(0, tx.amount - tx.paid_amount);
+                                                                return (
+                                                                    <tr key={tx.id} className="hover:bg-slate-50/50">
+                                                                        <td className="px-4 py-3 font-medium text-slate-800">
+                                                                            {tx.concept}
+                                                                            {tx.is_arbitration_penalty && (
+                                                                                <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Arbitraje</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-right text-slate-800">${parseFloat(tx.amount).toFixed(2)}</td>
+                                                                        <td className="px-4 py-3 text-right text-green-700 font-medium">${parseFloat(tx.paid_amount).toFixed(2)}</td>
+                                                                        <td className="px-4 py-3 text-right text-red-700 font-medium">${remaining.toFixed(2)}</td>
+                                                                        <td className="px-4 py-3 text-center">{statusBadge(tx.status)}</td>
+                                                                        <td className="px-4 py-3 text-center text-slate-500">{tx.due_date?.split('T')[0] || tx.due_date}</td>
+                                                                        <td className="px-4 py-3">
+                                                                            <div className="flex items-center justify-center space-x-1">
+                                                                                {tx.status !== 'paid' && (
+                                                                                    <button onClick={() => openPaymentModal(tx)} title="Registrar Pago" className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                                                                                        <Banknote className="w-5 h-5" />
+                                                                                    </button>
+                                                                                )}
+                                                                                <button onClick={() => openEditModal(tx)} title="Editar" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                                                    <Edit className="w-5 h-5" />
+                                                                                </button>
+                                                                                <button onClick={() => deleteCharge(tx.id)} title="Eliminar" className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                                                    <Trash2 className="w-5 h-5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm">
-                                                    <thead className="bg-slate-50/50 text-slate-600 border-b border-slate-200">
-                                                        <tr>
-                                                            <th className="px-4 py-3 text-left font-semibold">Concepto</th>
-                                                            <th className="px-4 py-3 text-right font-semibold">Monto</th>
-                                                            <th className="px-4 py-3 text-right font-semibold">Pagado</th>
-                                                            <th className="px-4 py-3 text-right font-semibold">Pendiente</th>
-                                                            <th className="px-4 py-3 text-center font-semibold">Estado</th>
-                                                            <th className="px-4 py-3 text-center font-semibold">Fecha</th>
-                                                            <th className="px-4 py-3 text-center font-semibold">Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-100">
-                                                        {catTxs.map(tx => {
-                                                            const remaining = Math.max(0, tx.amount - tx.paid_amount);
-                                                            return (
-                                                                <tr key={tx.id} className="hover:bg-slate-50/50">
-                                                                    <td className="px-4 py-3 font-medium text-slate-800">
-                                                                        {tx.concept}
-                                                                        {tx.is_arbitration_penalty && (
-                                                                            <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Arbitraje</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right text-slate-800">${parseFloat(tx.amount).toFixed(2)}</td>
-                                                                    <td className="px-4 py-3 text-right text-green-700 font-medium">${parseFloat(tx.paid_amount).toFixed(2)}</td>
-                                                                    <td className="px-4 py-3 text-right text-red-700 font-medium">${remaining.toFixed(2)}</td>
-                                                                    <td className="px-4 py-3 text-center">{statusBadge(tx.status)}</td>
-                                                                    <td className="px-4 py-3 text-center text-slate-500">{tx.due_date?.split('T')[0] || tx.due_date}</td>
-                                                                    <td className="px-4 py-3">
-                                                                        <div className="flex items-center justify-center space-x-1">
-                                                                            {tx.status !== 'paid' && (
-                                                                                <button onClick={() => openPaymentModal(tx)} title="Registrar Pago" className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                                                                                    <Banknote className="w-5 h-5" />
-                                                                                </button>
-                                                                            )}
-                                                                            <button onClick={() => openEditModal(tx)} title="Editar" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                                                <Edit className="w-5 h-5" />
-                                                                            </button>
-                                                                            <button onClick={() => deleteCharge(tx.id)} title="Eliminar" className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                                                                <Trash2 className="w-5 h-5" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            </div>
                                         );
-                                    })()
+                                    })
                                 )
                             )}
                         </div>
@@ -744,30 +743,35 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                             <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="w-6 h-6" /></button>
                         </div>
                         <form onSubmit={submitEdit} className="p-6 space-y-4">
-                            {/* Concept quick-select for Editing */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Concepto Rápido</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {dynamicConcepts.map(c => (
-                                        <button
-                                            key={c.label}
-                                            type="button"
-                                            onClick={() => {
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Seleccionar Concepto (Atajo)</label>
+                                <select
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-[#0033A0] text-slate-900 mb-4"
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        if (val) {
+                                            const preset = dynamicConcepts.find(c => c.label === val);
+                                            if (preset) {
                                                 editForm.setData({
                                                     ...editForm.data,
-                                                    concept: c.label,
-                                                    amount: c.amount
+                                                    concept: preset.label,
+                                                    amount: preset.amount
                                                 });
-                                            }}
-                                            className="px-3 py-2 text-sm text-left border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
-                                        >
-                                            <span className="block font-medium text-slate-800">{c.label}</span>
-                                        </button>
+                                            }
+                                        }
+                                        // Reset select to default so it can be triggered again
+                                        e.target.value = "";
+                                    }}
+                                    defaultValue=""
+                                >
+                                    <option value="" disabled>Elige un concepto para autocompletar...</option>
+                                    {dynamicConcepts.map(c => (
+                                        <option key={c.label} value={c.label}>{c.label}</option>
                                     ))}
-                                </div>
+                                </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Concepto Personalizado</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Concepto (Puedes editarlo)</label>
                                 <input
                                     type="text"
                                     value={editForm.data.concept}
@@ -1076,7 +1080,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                             title="Eliminar fila"
                                                         >
-                                                            <Trash className="w-5 h-5" />
+                                                            <Trash2 className="w-5 h-5" />
                                                         </button>
                                                     )}
                                                 </td>

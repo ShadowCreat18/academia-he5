@@ -4,30 +4,29 @@ import { Settings, LogOut, ArrowLeft, Save, Trash2, CheckCircle, XCircle, Clock,
 
 export default function Index({ auth, settings, deletionRequests = [] }) {
     const { data, setData, put, processing, errors } = useForm({
-        settingsList: settings.map(s => ({ ...s }))
+        settings: settings.map(s => ({ ...s }))
     });
 
     const addSetting = () => {
         const newKey = 'custom_' + Date.now();
-        setData('settingsList', [...data.settingsList, { key: newKey, name: 'Nuevo Concepto', value: '0', type: 'string' }]);
+        setData('settings', [...data.settings, { key: newKey, name: 'Nuevo Concepto', value: '0', type: 'string' }]);
     };
 
     const updateSetting = (index, field, val) => {
-        const newList = [...data.settingsList];
+        const newList = [...data.settings];
         newList[index][field] = val;
-        setData('settingsList', newList);
+        setData('settings', newList);
     };
 
     const removeSetting = (index) => {
-        const newList = [...data.settingsList];
+        const newList = [...data.settings];
         newList.splice(index, 1);
-        setData('settingsList', newList);
+        setData('settings', newList);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         put(route('settings.update'), {
-            data: { settings: data.settingsList },
             preserveScroll: true,
         });
     };
@@ -67,7 +66,7 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                     
                     <form onSubmit={handleSubmit} className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {data.settingsList.map((setting, index) => (
+                            {data.settings.map((setting, index) => (
                                 <div key={setting.key} className="flex gap-2 items-end">
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-slate-700 mb-2">
