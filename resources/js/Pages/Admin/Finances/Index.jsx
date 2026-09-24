@@ -141,14 +141,14 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
 
     // ── Agrupar transacciones por Categoría ──
     const getConceptCategory = (conceptName) => {
-        const lower = conceptName.toLowerCase();
+        const lower = (conceptName || '').toLowerCase();
         if (lower.includes('mensualidad')) return 'Mensualidades';
         if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
         if (lower.includes('material')) return 'Material Deportivo';
         if (lower.includes('torneo')) return 'Torneos';
         if (lower.includes('uniforme')) return 'Uniformes';
         if (lower.includes('arbitraje')) return 'Arbitrajes';
-        return 'Otros';
+        return conceptName;
     };
 
     const transactionsByYear = {};
