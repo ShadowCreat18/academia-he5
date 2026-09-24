@@ -71,16 +71,12 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                                 <div key={setting.key} className="flex gap-2 items-end">
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            {setting.key.startsWith('custom_') ? (
-                                                <input 
-                                                    type="text" 
-                                                    value={setting.name} 
-                                                    onChange={e => updateSetting(index, 'name', e.target.value)}
-                                                    className="w-full text-sm border-slate-300 rounded-lg focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm mb-1 text-slate-900"
-                                                />
-                                            ) : (
-                                                setting.name
-                                            )}
+                                            <input 
+                                                type="text" 
+                                                value={setting.name} 
+                                                onChange={e => updateSetting(index, 'name', e.target.value)}
+                                                className="w-full text-sm border-slate-300 rounded-lg focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm mb-1 text-slate-900"
+                                            />
                                         </label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -94,11 +90,9 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                                             />
                                         </div>
                                     </div>
-                                    {setting.key.startsWith('custom_') && (
                                         <button type="button" onClick={() => removeSetting(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg mb-0.5">
                                             <Trash2 className="w-5 h-5" />
                                         </button>
-                                    )}
                                 </div>
                             ))}
                         </div>

@@ -19,6 +19,9 @@ class SettingController extends Controller
             'settings.*.value' => 'required|string',
         ]);
 
+        $submittedKeys = collect($data['settings'])->pluck('key')->toArray();
+        Setting::whereNotIn('key', $submittedKeys)->delete();
+
         foreach ($data['settings'] as $settingData) {
             Setting::updateOrCreate(
                 ['key' => $settingData['key']],

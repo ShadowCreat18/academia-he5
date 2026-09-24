@@ -103,7 +103,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
     const addChargeRow = () => {
         multiChargeForm.setData('charges', [
             ...multiChargeForm.data.charges,
-            { concept: '', amount: '', due_date: '', paid_amount: '0' }
+            { concept: '', amount: '', due_date: new Date().toISOString().split('T')[0], paid_amount: '0' }
         ]);
     };
 
@@ -152,15 +152,28 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
 
     const transactionsByCategory = {};
     transactions.forEach(tx => {
-        const cat = getConceptCategory(tx.concept);
+        const year = tx.due_date ? tx.due_date.substring(0, 4) : new Date().getFullYear();
+        const baseCat = getConceptCategory(tx.concept);
+        const cat = `${year} - ${baseCat}`;
         if (!transactionsByCategory[cat]) transactionsByCategory[cat] = [];
         transactionsByCategory[cat].push(tx);
     });
-    // Ordenamos 'Mensualidades' primero, etc.
+    
+    // Sort logic: Year descending (2025 before 2024), then Mensualidades first, then alphabetical
     const sortedCategories = Object.keys(transactionsByCategory).sort((a, b) => {
-        if (a === 'Mensualidades') return -1;
-        if (b === 'Mensualidades') return 1;
-        return a.localeCompare(b);
+        const yearA = a.split(' - ')[0];
+        const yearB = b.split(' - ')[0];
+        
+        if (yearA !== yearB) {
+            return yearB.localeCompare(yearA);
+        }
+        
+        const catA = a.split(' - ')[1] || '';
+        const catB = b.split(' - ')[1] || '';
+        
+        if (catA === 'Mensualidades') return -1;
+        if (catB === 'Mensualidades') return 1;
+        return catA.localeCompare(catB);
     });
 
     useEffect(() => {
@@ -731,8 +744,30 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                             <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="w-6 h-6" /></button>
                         </div>
                         <form onSubmit={submitEdit} className="p-6 space-y-4">
+                            {/* Concept quick-select for Editing */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Concepto</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Concepto Rápido</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {dynamicConcepts.map(c => (
+                                        <button
+                                            key={c.label}
+                                            type="button"
+                                            onClick={() => {
+                                                editForm.setData({
+                                                    ...editForm.data,
+                                                    concept: c.label,
+                                                    amount: c.amount
+                                                });
+                                            }}
+                                            className="px-3 py-2 text-sm text-left border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                                        >
+                                            <span className="block font-medium text-slate-800">{c.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Concepto Personalizado</label>
                                 <input
                                     type="text"
                                     value={editForm.data.concept}
@@ -958,8 +993,10 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                 if (lastRow && !lastRow.concept && !lastRow.amount) {
                                                     applyConceptToRow(rows.length - 1, c);
                                                 } else {
-                                                    addChargeRow();
-                                                    setTimeout(() => applyConceptToRow(rows.length, c), 50);
+                                                    multiChargeForm.setData('charges', [
+                                                        ...rows,
+                                                        { concept: c.label, amount: c.amount, due_date: new Date().toISOString().split('T')[0], paid_amount: '0' }
+                                                    ]);
                                                 }
                                             }}
                                             className="px-2 py-2 text-xs text-center border border-slate-300 rounded-lg bg-white hover:bg-blue-50 hover:border-blue-200 transition-colors shadow-sm text-slate-900"
