@@ -675,9 +675,12 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                                                         </div>
                                                         <div className="flex justify-between items-center text-xs text-slate-500">
                                                             <span>
-                                                                {new Date(payment.created_at).toLocaleDateString('es-MX', { 
-                                                                    day: 'numeric', month: 'short', year: 'numeric',
-                                                                    hour: '2-digit', minute: '2-digit'
+                                                                {new Date(
+                                                                    (!isTopup && payment.financial_transaction?.due_date) 
+                                                                    ? payment.financial_transaction.due_date 
+                                                                    : payment.created_at
+                                                                ).toLocaleDateString('es-MX', { 
+                                                                    day: 'numeric', month: 'short', year: 'numeric'
                                                                 })}
                                                             </span>
                                                             <span className="font-medium">
