@@ -963,6 +963,35 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                     className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-[#0033A0] text-slate-900"
                                     required
                                 />
+                                {/* Helper para Mes/Torneo */}
+                                {(() => {
+                                    const lower = (bulkForm.data.concept || '').toLowerCase();
+                                    const append = (suffix) => {
+                                        if(!suffix) return;
+                                        const base = (bulkForm.data.concept || '').split('-')[0].trim();
+                                        bulkForm.setData('concept', `${base} - ${suffix}`);
+                                    };
+                                    if(!lower.includes('mensualidad') && !lower.includes('torneo') && !lower.includes('arbitraje')) return null;
+                                    return (
+                                        <div className="flex gap-2 mt-2">
+                                            {lower.includes('mensualidad') && (
+                                                <select onChange={e => append(e.target.value)} className="text-xs p-1.5 border border-blue-200 bg-blue-50 text-[#0033A0] font-semibold rounded-lg cursor-pointer" value="">
+                                                    <option value="" disabled>+ Elegir Mes...</option>
+                                                    {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {(lower.includes('torneo') || lower.includes('arbitraje')) && (
+                                                <select onChange={e => append(e.target.value)} className="text-xs p-1.5 border border-blue-200 bg-blue-50 text-[#0033A0] font-semibold rounded-lg cursor-pointer" value="">
+                                                    <option value="" disabled>+ Elegir Torneo...</option>
+                                                    <option value="1er Torneo">1er Torneo</option>
+                                                    <option value="2do Torneo">2do Torneo</option>
+                                                </select>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -1078,6 +1107,35 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                         placeholder="Ej. Mensualidad Diciembre 2025"
                                                         required
                                                     />
+                                                    {/* Helper para Mes/Torneo */}
+                                                    {(() => {
+                                                        const lower = (charge.concept || '').toLowerCase();
+                                                        const append = (suffix) => {
+                                                            if(!suffix) return;
+                                                            const base = (charge.concept || '').split('-')[0].trim();
+                                                            updateChargeRow(index, 'concept', `${base} - ${suffix}`);
+                                                        };
+                                                        if(!lower.includes('mensualidad') && !lower.includes('torneo') && !lower.includes('arbitraje')) return null;
+                                                        return (
+                                                            <div className="flex gap-2 mt-1.5">
+                                                                {lower.includes('mensualidad') && (
+                                                                    <select onChange={e => append(e.target.value)} className="text-[11px] p-1 border border-blue-200 bg-blue-50 text-[#0033A0] font-semibold rounded cursor-pointer w-full" value="">
+                                                                        <option value="" disabled>+ Elegir Mes...</option>
+                                                                        {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map(m => (
+                                                                            <option key={m} value={m}>{m}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                )}
+                                                                {(lower.includes('torneo') || lower.includes('arbitraje')) && (
+                                                                    <select onChange={e => append(e.target.value)} className="text-[11px] p-1 border border-blue-200 bg-blue-50 text-[#0033A0] font-semibold rounded cursor-pointer w-full" value="">
+                                                                        <option value="" disabled>+ Elegir Torneo...</option>
+                                                                        <option value="1er Torneo">1er Torneo</option>
+                                                                        <option value="2do Torneo">2do Torneo</option>
+                                                                    </select>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <input
