@@ -537,12 +537,12 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                             {/* Tabs por categoría */}
                             {transactions.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {sortedCategories.map(year => (
+                                    {sortedCategories.map(cat => (
                                         <button
                                             key={cat}
-                                            onClick={() => setActiveTab(year)}
+                                            onClick={() => setActiveTab(cat)}
                                             className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
-                                                activeTab === year 
+                                                activeTab === cat 
                                                 ? 'bg-[#0033A0] text-white shadow-md' 
                                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                             }`}
@@ -563,7 +563,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 activeTab && transactionsByCategory[activeTab] && (
                                     (() => {
                                         const cat = activeTab;
-                                        const catTxs = transactionsByCategory[year];
+                                        const catTxs = transactionsByCategory[cat];
                                         const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
                                         const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
                                         const catPending = catTotal - catPaid;
