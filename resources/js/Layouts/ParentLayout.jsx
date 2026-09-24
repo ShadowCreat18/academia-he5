@@ -85,7 +85,7 @@ export default function ParentLayout({ children, title }) {
                     )}
                 </header>
                 
-                <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                <div className="p-4 md:p-8 w-full">
                     {children}
                 </div>
             </main>

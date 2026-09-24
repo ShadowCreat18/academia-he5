@@ -28,7 +28,7 @@ const ChildFinancesCard = ({
     handlePayWithStripe, 
     loadingAction 
 }) => {
-    const transactions = child.financial_transactions || child.financialTransactions || [];
+    const transactions = (child.financial_transactions || child.financialTransactions || []).filter(tx => tx.amount > tx.paid_amount);
     
     // Agrupar por año y luego por categoría
     const transactionsByYear = {};
@@ -78,8 +78,8 @@ const ChildFinancesCard = ({
                     {/* Pestañas de Años y Conceptos */}
                     {sortedYears.length > 0 && (
                         <div className="flex flex-col gap-4 mb-6">
-                            <div className="flex gap-2 overflow-x-auto pb-2">
-                                <span className="py-2 text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Año:</span>
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <span className="text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Año:</span>
                                 {sortedYears.map(year => (
                                     <button
                                         key={year}
@@ -99,8 +99,8 @@ const ChildFinancesCard = ({
                             </div>
                             
                             {activeYear && transactionsByYear[activeYear] && (
-                                <div className="flex gap-2 overflow-x-auto pb-2">
-                                    <span className="py-2 text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Filtro:</span>
+                                <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-slate-100">
+                                    <span className="text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Filtro:</span>
                                     <button
                                         onClick={() => setActiveConcept('Todas')}
                                         className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
@@ -154,14 +154,21 @@ const ChildFinancesCard = ({
                                                     const isSelected = selectedTransactions.some(item => item.id === tx.id);
                                                     
                                                     return (
-                                                        <div key={tx.id} className={`p-4 flex items-center gap-4 transition-colors hover:bg-slate-50 ${isSelected ? 'bg-red-50/50' : ''}`}>
+                                                        <div 
+                                                            key={tx.id} 
+                                                            className={`p-4 flex items-center gap-4 transition-colors hover:bg-slate-50 cursor-pointer ${isSelected ? 'bg-red-50/50' : ''}`}
+                                                            onClick={(e) => {
+                                                                if (e.target.tagName.toLowerCase() === 'button') return;
+                                                                toggleTransactionSelection(tx.id, debt);
+                                                            }}
+                                                        >
                                                             {debt > 0 && (
                                                                 <div className="flex-shrink-0">
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={isSelected}
-                                                                        onChange={() => toggleTransactionSelection(tx.id, debt)}
-                                                                        className="w-5 h-5 text-[#E31837] rounded border-slate-300 focus:ring-[#E31837] text-slate-900"
+                                                                        readOnly
+                                                                        className="w-5 h-5 text-[#E31837] rounded border-slate-300 focus:ring-[#E31837] text-slate-900 pointer-events-none"
                                                                     />
                                                                 </div>
                                                             )}
