@@ -79,56 +79,24 @@ class DashboardController extends Controller
                 return true;
             });
 
-            // Agrupar por mes (año actual)
-            $currentYear = Carbon::now()->year;
-            $monthlyIncome = [
-                'Ene' => 0, 'Feb' => 0, 'Mar' => 0, 'Abr' => 0, 'May' => 0, 'Jun' => 0,
-                'Jul' => 0, 'Ago' => 0, 'Sep' => 0, 'Oct' => 0, 'Nov' => 0, 'Dic' => 0
-            ];
-            $monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-            foreach ($validPayments as $payment) {
-                $date = Carbon::parse($payment->created_at);
-                if ($date->year == $currentYear) {
-                    $monthStr = $monthNames[$date->month - 1];
-                    $monthlyIncome[$monthStr] += (float) $payment->amount;
-                }
-            }
-
-            // Formatear para recharts
-            $monthlyChartData = [];
-            foreach ($monthlyIncome as $month => $total) {
-                $monthlyChartData[] = ['name' => $month, 'total' => round($total, 2)];
-            }
-
-            // Agrupar por concepto (Gráfica circular)
-            $distributionData = [];
-            foreach ($validPayments as $payment) {
-                $concept = $payment->financialTransaction->concept;
-                // Agrupar por la primera palabra clave para limpiar la gráfica (ej. Mensualidad Octubre -> Mensualidad)
-                $firstWord = explode(' ', trim($concept))[0]; 
-                // Estandarizar un poco (Mensualidad, Inscripción, Uniforme, Torneo)
-                $groupName = ucfirst(strtolower($firstWord));
-
-                if (!isset($distributionData[$groupName])) {
-                    $distributionData[$groupName] = 0;
-                }
-                $distributionData[$groupName] += (float) $payment->amount;
-            }
-
-            $pieChartData = [];
-            foreach ($distributionData as $name => $value) {
-                if ($value > 0) {
-                    $pieChartData[] = ['name' => $name, 'value' => round($value, 2)];
-                }
-            }
-            usort($pieChartData, function($a, $b) { return $b['value'] <=> $a['value']; });
+            $validPaymentsArray = $validPayments->map(function($payment) {
+                $tx = $payment->financialTransaction;
+                $playerCat = $tx->player ? $tx->player->category : 'Sin Categoría';
+                if (!$playerCat) $playerCat = 'Sin Categoría';
+                
+                return [
+                    'id' => $payment->id,
+                    'amount' => (float) $payment->amount,
+                    'created_at' => $payment->created_at->format('Y-m-d H:i:s'),
+                    'concept' => $tx->concept,
+                    'player_category' => $playerCat,
+                ];
+            })->values()->toArray();
 
             return Inertia::render('Admin/Dashboard', [
                 'categoriesStats' => $categoriesStats,
                 'topDebtors' => $topDebtors,
-                'monthlyChartData' => $monthlyChartData,
-                'pieChartData' => $pieChartData,
+                'validPayments' => $validPaymentsArray,
                 'whatsappPhone' => \App\Models\Setting::getVal('whatsapp_sender_phone', '4921226800'),
             ]);
         }

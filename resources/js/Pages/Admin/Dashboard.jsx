@@ -3,9 +3,53 @@ import { Head, Link } from '@inertiajs/react';
 import { Users, LogOut, DollarSign, Activity, FileText, Trophy, Wallet, Settings, AlertTriangle, MessageCircle, BarChart2, PieChart as PieChartIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-export default function Dashboard({ auth, categoriesStats = {}, monthlyChartData = [], pieChartData = [], ...props }) {
+export default function Dashboard({ auth, categoriesStats = {}, validPayments = [], ...props }) {
     const categories = Object.keys(categoriesStats);
     const [activeTab, setActiveTab] = useState('General');
+
+    // Extraer años disponibles de los pagos
+    const availableYears = [...new Set(validPayments.map(p => new Date(p.created_at).getFullYear()))].sort((a,b) => b - a);
+    const defaultYear = availableYears.length > 0 ? availableYears[0].toString() : new Date().getFullYear().toString();
+    const [activeYear, setActiveYear] = useState(defaultYear);
+
+    // Filtrar pagos por año y pestaña activa
+    const filteredPayments = validPayments.filter(p => {
+        const pYear = new Date(p.created_at).getFullYear().toString();
+        if (pYear !== activeYear) return false;
+        
+        if (activeTab === 'General') return true;
+        return p.player_category === activeTab;
+    });
+
+    // Calcular Datos Mensuales
+    const monthlyIncome = {
+        'Ene': 0, 'Feb': 0, 'Mar': 0, 'Abr': 0, 'May': 0, 'Jun': 0,
+        'Jul': 0, 'Ago': 0, 'Sep': 0, 'Oct': 0, 'Nov': 0, 'Dic': 0
+    };
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    filteredPayments.forEach(p => {
+        const d = new Date(p.created_at);
+        const monthStr = monthNames[d.getMonth()];
+        monthlyIncome[monthStr] += parseFloat(p.amount || 0);
+    });
+
+    const monthlyChartData = Object.entries(monthlyIncome).map(([name, total]) => ({ name, total: Math.round(total * 100) / 100 }));
+
+    // Calcular Datos del Pie Chart
+    const distributionData = {};
+    filteredPayments.forEach(p => {
+        const firstWord = (p.concept || '').trim().split(' ')[0];
+        const groupName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+        
+        if (!distributionData[groupName]) distributionData[groupName] = 0;
+        distributionData[groupName] += parseFloat(p.amount || 0);
+    });
+
+    const pieChartData = Object.entries(distributionData)
+        .filter(([_, value]) => value > 0)
+        .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+        .sort((a, b) => b.value - a.value);
 
     const currentStats = categoriesStats[activeTab] || { activePlayers: 0, income: 0, overdue: 0 };
 
@@ -77,24 +121,41 @@ export default function Dashboard({ auth, categoriesStats = {}, monthlyChartData
                     </div>
                 </div>
 
-                {/* ── Pestañas de Categoría ── */}
-                {categories.length > 0 && (
-                    <div className="flex overflow-x-auto hide-scrollbar space-x-2 mb-6 pb-2">
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveTab(cat)}
-                                className={`whitespace-nowrap px-5 py-2.5 rounded-full font-bold text-sm transition-colors ${
-                                    activeTab === cat 
-                                    ? 'bg-[#0033A0] text-white shadow-md' 
-                                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                                }`}
+                {/* ── Filtros (Año y Categoría) ── */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    {categories.length > 0 && (
+                        <div className="flex overflow-x-auto hide-scrollbar space-x-2 pb-2 sm:pb-0 w-full sm:w-auto">
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setActiveTab(cat)}
+                                    className={`whitespace-nowrap px-5 py-2.5 rounded-full font-bold text-sm transition-colors ${
+                                        activeTab === cat 
+                                        ? 'bg-[#0033A0] text-white shadow-md' 
+                                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {availableYears.length > 0 && (
+                        <div className="flex items-center space-x-2 shrink-0">
+                            <label className="text-sm font-bold text-slate-700">Año Gráficas:</label>
+                            <select
+                                value={activeYear}
+                                onChange={(e) => setActiveYear(e.target.value)}
+                                className="bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-semibold shadow-sm"
                             >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                                {availableYears.map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
