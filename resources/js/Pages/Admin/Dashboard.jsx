@@ -36,11 +36,24 @@ export default function Dashboard({ auth, categoriesStats = {}, validPayments = 
 
     const monthlyChartData = Object.entries(monthlyIncome).map(([name, total]) => ({ name, total: Math.round(total * 100) / 100 }));
 
+    // Helper para categorizar conceptos
+    const getConceptCategory = (conceptName) => {
+        const lower = (conceptName || '').toLowerCase();
+        if (lower.includes('mensualidad')) return 'Mensualidades';
+        if (lower.includes('inscripción anual') || lower.includes('inscripcion anual')) return 'Inscripción Anual';
+        if ((lower.includes('inscripción') || lower.includes('inscripcion')) && lower.includes('torneo')) return 'Torneos';
+        if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
+        if (lower.includes('material')) return 'Material Deportivo';
+        if (lower.includes('torneo')) return 'Torneos';
+        if (lower.includes('uniforme')) return 'Uniformes';
+        if (lower.includes('arbitraje')) return 'Arbitrajes';
+        return conceptName;
+    };
+
     // Calcular Datos del Pie Chart
     const distributionData = {};
     filteredPayments.forEach(p => {
-        const firstWord = (p.concept || '').trim().split(' ')[0];
-        const groupName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+        const groupName = getConceptCategory(p.concept);
         
         if (!distributionData[groupName]) distributionData[groupName] = 0;
         distributionData[groupName] += parseFloat(p.amount || 0);
