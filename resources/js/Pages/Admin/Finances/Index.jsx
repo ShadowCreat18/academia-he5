@@ -144,7 +144,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         const lower = (conceptName || '').toLowerCase();
         if (lower.includes('mensualidad')) return 'Mensualidades';
         if (lower.includes('inscripción anual') || lower.includes('inscripcion anual')) return 'Inscripción Anual';
-        if (lower.includes('inscripción torneo') || lower.includes('inscripcion torneo')) return 'Inscripción Torneo';
+        if (lower.includes('inscripción torneo') || lower.includes('inscripcion torneo')) return 'Torneos';
         if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
         if (lower.includes('material')) return 'Material Deportivo';
         if (lower.includes('torneo')) return 'Torneos';
