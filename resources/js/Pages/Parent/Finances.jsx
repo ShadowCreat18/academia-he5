@@ -248,6 +248,58 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
     const [topupError, setTopupError] = useState('');
     const [activeTab, setActiveTab] = useState('pendientes'); // 'pendientes' o 'historial'
     const [selectedTransactions, setSelectedTransactions] = useState([]);
+    
+    // Agrupar historial de pagos
+    const historyByYear = useMemo(() => {
+        const byYear = {};
+        (userPayments || []).forEach(payment => {
+            const year = payment.created_at ? payment.created_at.substring(0, 4) : String(new Date().getFullYear());
+            const isTopup = !payment.financial_transaction_id;
+            let cat = 'Recargas';
+            if (!isTopup && payment.financial_transaction) {
+                const concept = payment.financial_transaction.concept.toLowerCase();
+                if (concept.includes('inscripci') || concept.includes('torneo')) cat = 'Torneos';
+                else if (concept.includes('mensual')) cat = 'Mensualidades';
+                else if (concept.includes('uniforme')) cat = 'Uniformes';
+                else if (concept.includes('arbitraje')) cat = 'Arbitrajes';
+                else cat = payment.financial_transaction.concept;
+            }
+            
+            if (!byYear[year]) byYear[year] = {};
+            if (!byYear[year][cat]) byYear[year][cat] = [];
+            byYear[year][cat].push(payment);
+        });
+        return byYear;
+    }, [userPayments]);
+
+    const sortedHistoryYears = useMemo(() => Object.keys(historyByYear).sort((a, b) => b.localeCompare(a)), [historyByYear]);
+    const [activeHistoryYear, setActiveHistoryYear] = useState(sortedHistoryYears.length > 0 ? sortedHistoryYears[0] : null);
+    const [activeHistoryConcept, setActiveHistoryConcept] = useState('Todas');
+
+    useEffect(() => {
+        if (!activeHistoryYear && sortedHistoryYears.length > 0) {
+            setActiveHistoryYear(sortedHistoryYears[0]);
+        }
+    }, [sortedHistoryYears, activeHistoryYear]);
+
+    const getSortedHistoryCategories = (year) => {
+        if (!historyByYear[year]) return [];
+        return Object.keys(historyByYear[year]).sort((a, b) => {
+            if (a === 'Recargas') return 1;
+            if (b === 'Recargas') return -1;
+            if (a === 'Mensualidades') return -1;
+            if (b === 'Mensualidades') return 1;
+            return a.localeCompare(b);
+        });
+    };
+
+    const getFilteredHistoryPayments = () => {
+        if (!activeHistoryYear || !historyByYear[activeHistoryYear]) return [];
+        if (activeHistoryConcept === 'Todas') {
+            return Object.values(historyByYear[activeHistoryYear]).flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+        return historyByYear[activeHistoryYear][activeHistoryConcept] || [];
+    };
 
     const [walletModalOpen, setWalletModalOpen] = useState(false);
     const [selectedWalletTx, setSelectedWalletTx] = useState(null);
@@ -533,57 +585,117 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                         <div className="p-0">
                             {userPayments && userPayments.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
-                                    {userPayments.map(payment => {
-                                        const isTopup = !payment.financial_transaction_id;
-                                        const player = !isTopup && payment.financial_transaction?.player 
-                                            ? `${payment.financial_transaction.player.first_name} ${payment.financial_transaction.player.last_name}` 
-                                            : null;
-                                        let conceptLabel = 'Pago';
-                                        if (isTopup) {
-                                            conceptLabel = 'Recarga de monedero digital';
-                                        } else if (payment.financial_transaction) {
-                                            const txAmount = parseFloat(payment.financial_transaction.amount);
-                                            const paidAmount = parseFloat(payment.amount);
-                                            if (paidAmount < txAmount) {
-                                                conceptLabel = `Abono a: ${payment.financial_transaction.concept}`;
-                                            } else {
-                                                conceptLabel = `Pago a: ${payment.financial_transaction.concept}`;
-                                            }
-                                        }
-                                            
-                                        return (
-                                            <div key={payment.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-                                                <div className="flex-shrink-0">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isTopup ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                        {isTopup ? <PlusCircle className="w-5 h-5" /> : <Receipt className="w-5 h-5" />}
-                                                    </div>
+                                    {sortedHistoryYears.length > 0 && (
+                                        <div className="p-6 border-b border-slate-100">
+                                            <div className="flex flex-col gap-4">
+                                                <div className="flex flex-wrap gap-2 items-center">
+                                                    <span className="text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Año:</span>
+                                                    {sortedHistoryYears.map(year => (
+                                                        <button
+                                                            key={year}
+                                                            onClick={() => {
+                                                                setActiveHistoryYear(year);
+                                                                setActiveHistoryConcept('Todas');
+                                                            }}
+                                                            className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                                                activeHistoryYear === year 
+                                                                ? 'bg-[#E31837] text-white shadow-md' 
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                            }`}
+                                                        >
+                                                            {year}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className="font-bold text-slate-800 text-sm">
-                                                            {conceptLabel}
-                                                        </h4>
-                                                        <div className="text-right">
-                                                            <p className={`font-bold text-sm ${isTopup ? 'text-green-600' : 'text-slate-800'}`}>
-                                                                {isTopup ? '+' : ''}${payment.amount}
-                                                            </p>
+                                                
+                                                {activeHistoryYear && historyByYear[activeHistoryYear] && (
+                                                    <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-slate-100">
+                                                        <span className="text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Filtro:</span>
+                                                        <button
+                                                            onClick={() => setActiveHistoryConcept('Todas')}
+                                                            className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                                                activeHistoryConcept === 'Todas' 
+                                                                ? 'bg-[#0033A0] text-white shadow-md' 
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                            }`}
+                                                        >
+                                                            Todas
+                                                        </button>
+                                                        {getSortedHistoryCategories(activeHistoryYear).map(cat => (
+                                                            <button
+                                                                key={cat}
+                                                                onClick={() => setActiveHistoryConcept(cat)}
+                                                                className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                                                    activeHistoryConcept === cat 
+                                                                    ? 'bg-[#0033A0] text-white shadow-md' 
+                                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                                }`}
+                                                            >
+                                                                {cat}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {getFilteredHistoryPayments().length > 0 ? (
+                                        getFilteredHistoryPayments().map(payment => {
+                                            const isTopup = !payment.financial_transaction_id;
+                                            const player = !isTopup && payment.financial_transaction?.player 
+                                                ? `${payment.financial_transaction.player.first_name} ${payment.financial_transaction.player.last_name}` 
+                                                : null;
+                                            let conceptLabel = 'Pago';
+                                            if (isTopup) {
+                                                conceptLabel = 'Recarga de monedero digital';
+                                            } else if (payment.financial_transaction) {
+                                                const txAmount = parseFloat(payment.financial_transaction.amount);
+                                                const paidAmount = parseFloat(payment.amount);
+                                                if (paidAmount < txAmount) {
+                                                    conceptLabel = `Abono a: ${payment.financial_transaction.concept}`;
+                                                } else {
+                                                    conceptLabel = `Pago a: ${payment.financial_transaction.concept}`;
+                                                }
+                                            }
+                                                
+                                            return (
+                                                <div key={payment.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                                                    <div className="flex-shrink-0">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isTopup ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                            {isTopup ? <PlusCircle className="w-5 h-5" /> : <Receipt className="w-5 h-5" />}
                                                         </div>
                                                     </div>
-                                                    <div className="flex justify-between items-center text-xs text-slate-500">
-                                                        <span>
-                                                            {new Date(payment.created_at).toLocaleDateString('es-MX', { 
-                                                                day: 'numeric', month: 'short', year: 'numeric',
-                                                                hour: '2-digit', minute: '2-digit'
-                                                            })}
-                                                        </span>
-                                                        <span className="font-medium">
-                                                            {isTopup ? 'Abono a monedero' : (player ? `Para: ${player}` : 'Pago realizado')}
-                                                        </span>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <h4 className="font-bold text-slate-800 text-sm">
+                                                                {conceptLabel}
+                                                            </h4>
+                                                            <div className="text-right">
+                                                                <p className={`font-bold text-sm ${isTopup ? 'text-green-600' : 'text-slate-800'}`}>
+                                                                    {isTopup ? '+' : ''}${payment.amount}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-xs text-slate-500">
+                                                            <span>
+                                                                {new Date(payment.created_at).toLocaleDateString('es-MX', { 
+                                                                    day: 'numeric', month: 'short', year: 'numeric',
+                                                                    hour: '2-digit', minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {isTopup ? 'Abono a monedero' : (player ? `Para: ${player}` : 'Pago realizado')}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-center py-10 text-slate-500">
+                                            <p className="text-sm font-medium">No hay movimientos para este filtro.</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="text-center py-10 text-slate-500">
