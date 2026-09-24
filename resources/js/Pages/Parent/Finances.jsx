@@ -45,6 +45,7 @@ const ChildFinancesCard = ({
     
     const sortedYears = Object.keys(transactionsByYear).sort((a, b) => b.localeCompare(a));
     const [activeYear, setActiveYear] = useState(sortedYears.length > 0 ? sortedYears[0] : null);
+    const [activeConcept, setActiveConcept] = useState('Todas');
 
     const getSortedCategoriesForYear = (year) => {
         if (!transactionsByYear[year]) return [];
@@ -72,22 +73,57 @@ const ChildFinancesCard = ({
                 </div>
 
                 <div className="p-6">
-                    {/* Pestañas de Años */}
+                    {/* Pestañas de Años y Conceptos */}
                     {sortedYears.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto mb-6 pb-2">
-                            {sortedYears.map(year => (
-                                <button
-                                    key={year}
-                                    onClick={() => setActiveYear(year)}
-                                    className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
-                                        activeYear === year 
-                                        ? 'bg-[#E31837] text-white shadow-md' 
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    {year}
-                                </button>
-                            ))}
+                        <div className="flex flex-col gap-4 mb-6">
+                            <div className="flex gap-2 overflow-x-auto pb-2">
+                                <span className="py-2 text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Año:</span>
+                                {sortedYears.map(year => (
+                                    <button
+                                        key={year}
+                                        onClick={() => {
+                                            setActiveYear(year);
+                                            setActiveConcept('Todas');
+                                        }}
+                                        className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                            activeYear === year 
+                                            ? 'bg-[#E31837] text-white shadow-md' 
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        {year}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {activeYear && transactionsByYear[activeYear] && (
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    <span className="py-2 text-sm font-bold text-slate-400 mr-2 whitespace-nowrap">Filtro:</span>
+                                    <button
+                                        onClick={() => setActiveConcept('Todas')}
+                                        className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                            activeConcept === 'Todas' 
+                                            ? 'bg-[#0033A0] text-white shadow-md' 
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        Todas
+                                    </button>
+                                    {getSortedCategoriesForYear(activeYear).map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setActiveConcept(cat)}
+                                            className={`px-4 py-2 rounded-full font-bold text-sm transition-colors whitespace-nowrap ${
+                                                activeConcept === cat 
+                                                ? 'bg-[#0033A0] text-white shadow-md' 
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -100,7 +136,9 @@ const ChildFinancesCard = ({
                     ) : (
                         activeYear && transactionsByYear[activeYear] && (
                             <div className="space-y-6">
-                                {getSortedCategoriesForYear(activeYear).map(cat => {
+                                {getSortedCategoriesForYear(activeYear)
+                                    .filter(cat => activeConcept === 'Todas' || activeConcept === cat)
+                                    .map(cat => {
                                     const catTxs = transactionsByYear[activeYear][cat];
                                     
                                     return (

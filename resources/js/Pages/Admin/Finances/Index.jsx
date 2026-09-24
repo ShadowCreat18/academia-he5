@@ -45,6 +45,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [payingTransaction, setPayingTransaction] = useState(null);
     const [activeTab, setActiveTab] = useState(null);
+    const [activeConceptTab, setActiveConceptTab] = useState('Todas');
 
     // Group players by category
     const playersByCategory = {};
@@ -170,8 +171,10 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
     useEffect(() => {
         if (selectedPlayerId && sortedYears.length > 0 && !activeTab) {
             setActiveTab(sortedYears[0]);
+            setActiveConceptTab('Todas');
         } else if (!selectedPlayerId) {
             setActiveTab(null);
+            setActiveConceptTab('Todas');
         }
     }, [selectedPlayerId, sortedYears]);
 
@@ -549,20 +552,56 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
 
                             {/* Tabs por Año */}
                             {transactions.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    {sortedYears.map(year => (
-                                        <button
-                                            key={year}
-                                            onClick={() => setActiveTab(year)}
-                                            className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
-                                                activeTab === year 
-                                                ? 'bg-[#0033A0] text-white shadow-md' 
-                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            }`}
-                                        >
-                                            {year}
-                                        </button>
-                                    ))}
+                                <div className="flex flex-col gap-4 mb-6">
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className="py-2 text-sm font-bold text-slate-400 mr-2">Año:</span>
+                                        {sortedYears.map(year => (
+                                            <button
+                                                key={year}
+                                                onClick={() => {
+                                                    setActiveTab(year);
+                                                    setActiveConceptTab('Todas');
+                                                }}
+                                                className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+                                                    activeTab === year 
+                                                    ? 'bg-[#0033A0] text-white shadow-md' 
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                }`}
+                                            >
+                                                {year}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Tabs por Concepto */}
+                                    {activeTab && transactionsByYear[activeTab] && (
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="py-2 text-sm font-bold text-slate-400 mr-2">Filtro:</span>
+                                            <button
+                                                onClick={() => setActiveConceptTab('Todas')}
+                                                className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+                                                    activeConceptTab === 'Todas' 
+                                                    ? 'bg-[#E31837] text-white shadow-md' 
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                }`}
+                                            >
+                                                Todas
+                                            </button>
+                                            {getSortedCategoriesForYear(activeTab).map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => setActiveConceptTab(cat)}
+                                                    className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+                                                        activeConceptTab === cat 
+                                                        ? 'bg-[#E31837] text-white shadow-md' 
+                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -574,7 +613,9 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 </div>
                             ) : (
                                 activeTab && transactionsByYear[activeTab] && (
-                                    getSortedCategoriesForYear(activeTab).map(cat => {
+                                    getSortedCategoriesForYear(activeTab)
+                                        .filter(cat => activeConceptTab === 'Todas' || activeConceptTab === cat)
+                                        .map(cat => {
                                         const catTxs = transactionsByYear[activeTab][cat];
                                         const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
                                         const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
