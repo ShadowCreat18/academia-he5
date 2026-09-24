@@ -595,7 +595,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                     </div>
                 ) : (
                     children.length > 0 ? (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-6">
                             {children.map((child) => (
                                 <ChildFinancesCard 
                                     key={child.id} 

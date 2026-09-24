@@ -152,7 +152,10 @@ class ParentController extends Controller
             $child->total_debt = $totalDebt;
         }
 
-        $userPayments = \App\Models\TransactionPayment::where('user_id', $user->id)
+        $childrenIds = $children->pluck('id');
+        $userPayments = \App\Models\TransactionPayment::whereHas('financialTransaction', function($q) use ($childrenIds) {
+                $q->whereIn('player_id', $childrenIds);
+            })
             ->with(['financialTransaction' => function($q) {
                 $q->with('player:id,first_name,last_name');
             }])
