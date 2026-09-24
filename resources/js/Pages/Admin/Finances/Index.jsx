@@ -21,16 +21,13 @@ function statusBadge(status) {
     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800"><AlertTriangle className="w-3 h-3 mr-1" />Pendiente</span>;
 }
 
-export default function Index({ auth, players = [], selectedPlayer, transactions = [], selectedPlayerId, settings = {} }) {
+export default function Index({ auth, players = [], selectedPlayer, transactions = [], selectedPlayerId, settings = [] }) {
     
-    const dynamicConcepts = [
-        { label: 'Inscripción', amount: settings.cost_inscripcion || 1250 },
-        { label: 'Apoyo Material Deportivo', amount: settings.cost_material || 1000 },
-        { label: 'Inscripción Torneo', amount: settings.cost_torneo || 250 },
-        { label: 'Mensualidad', amount: settings.cost_mensualidad || 500 },
-        { label: 'Uniformes', amount: settings.cost_uniformes || 2000 },
-        { label: 'Arbitrajes', amount: settings.cost_arbitraje || 50 },
-    ];
+    const dynamicConcepts = settings.map(s => ({
+        label: s.name || s.key,
+        amount: parseFloat(s.value) || 0,
+        isArbitraje: s.key === 'cost_arbitraje' || (s.name || '').toLowerCase().includes('arbitraje')
+    }));
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
@@ -47,7 +44,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
     
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [payingTransaction, setPayingTransaction] = useState(null);
-    const [activeYearTab, setActiveYearTab] = useState(null);
+    const [activeTab, setActiveTab] = useState(null);
 
     // Group players by category
     const playersByCategory = {};
@@ -141,23 +138,38 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         });
     };
 
-    // ── Agrupar transacciones por año ──
-    const transactionsByYear = {};
+    // ── Agrupar transacciones por Categoría ──
+    const getConceptCategory = (conceptName) => {
+        const lower = conceptName.toLowerCase();
+        if (lower.includes('mensualidad')) return 'Mensualidades';
+        if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
+        if (lower.includes('material')) return 'Material Deportivo';
+        if (lower.includes('torneo')) return 'Torneos';
+        if (lower.includes('uniforme')) return 'Uniformes';
+        if (lower.includes('arbitraje')) return 'Arbitrajes';
+        return 'Otros';
+    };
+
+    const transactionsByCategory = {};
     transactions.forEach(tx => {
-        const dateStr = tx.due_date?.split('T')[0] || tx.due_date || '';
-        const year = dateStr.substring(0, 4) || 'Sin Fecha';
-        if (!transactionsByYear[year]) transactionsByYear[year] = [];
-        transactionsByYear[year].push(tx);
+        const cat = getConceptCategory(tx.concept);
+        if (!transactionsByCategory[cat]) transactionsByCategory[cat] = [];
+        transactionsByCategory[cat].push(tx);
     });
-    const sortedYears = Object.keys(transactionsByYear).sort((a, b) => b.localeCompare(a));
+    // Ordenamos 'Mensualidades' primero, etc.
+    const sortedCategories = Object.keys(transactionsByCategory).sort((a, b) => {
+        if (a === 'Mensualidades') return -1;
+        if (b === 'Mensualidades') return 1;
+        return a.localeCompare(b);
+    });
 
     useEffect(() => {
-        if (selectedPlayerId && sortedYears.length > 0 && !activeYearTab) {
-            setActiveYearTab(sortedYears[0]);
+        if (selectedPlayerId && sortedCategories.length > 0 && !activeTab) {
+            setActiveTab(sortedCategories[0]);
         } else if (!selectedPlayerId) {
-            setActiveYearTab(null);
+            setActiveTab(null);
         }
-    }, [selectedPlayerId, sortedYears]);
+    }, [selectedPlayerId, sortedCategories]);
 
     const selectPlayer = (playerId) => {
         router.get('/finances', { player_id: playerId }, { preserveState: true, preserveScroll: true });
@@ -172,7 +184,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
             ...data,
             concept: concept.label,
             amount: concept.amount,
-            is_arbitration_penalty: concept.label === 'Arbitrajes',
+            is_arbitration_penalty: concept.isArbitraje,
         }));
     };
 
@@ -522,47 +534,47 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 );
                             })()}
 
-                            {/* Tabs por año */}
+                            {/* Tabs por categoría */}
                             {transactions.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {sortedYears.map(year => (
+                                    {sortedCategories.map(year => (
                                         <button
-                                            key={year}
-                                            onClick={() => setActiveYearTab(year)}
+                                            key={cat}
+                                            onClick={() => setActiveTab(year)}
                                             className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${
-                                                activeYearTab === year 
+                                                activeTab === year 
                                                 ? 'bg-[#0033A0] text-white shadow-md' 
                                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                             }`}
                                         >
-                                            {year}
+                                            {cat}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            {/* Tabla de transacciones del año activo */}
+                            {/* Tabla de transacciones de la categoría activa */}
                             {transactions.length === 0 ? (
                                 <div className="bg-slate-50 rounded-2xl border border-slate-200 border-dashed p-12 text-center text-slate-400">
                                     <DollarSign className="mx-auto w-12 h-12 mb-3 text-slate-300" />
                                     <p>Este jugador no tiene cargos registrados.</p>
                                 </div>
                             ) : (
-                                activeYearTab && transactionsByYear[activeYearTab] && (
+                                activeTab && transactionsByCategory[activeTab] && (
                                     (() => {
-                                        const year = activeYearTab;
-                                        const yearTxs = transactionsByYear[year];
-                                        const yearTotal = yearTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
-                                        const yearPaid = yearTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
-                                        const yearPending = yearTotal - yearPaid;
+                                        const cat = activeTab;
+                                        const catTxs = transactionsByCategory[year];
+                                        const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+                                        const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
+                                        const catPending = catTotal - catPaid;
                                         return (
-                                            <div key={year} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                                            <div key={cat} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
                                                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-2">
-                                                    <h3 className="font-bold text-lg text-slate-700">📅 {year}</h3>
+                                                    <h3 className="font-bold text-lg text-slate-700">📂 {cat}</h3>
                                                 <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-                                                    <span className="text-slate-500">Cargado: <strong className="text-slate-800">${yearTotal.toFixed(2)}</strong></span>
-                                                    <span className="text-green-600">Pagado: <strong>${yearPaid.toFixed(2)}</strong></span>
-                                                    <span className="text-red-600">Pendiente: <strong>${yearPending.toFixed(2)}</strong></span>
+                                                    <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
+                                                    <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                                                    <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
                                                 </div>
                                             </div>
                                             <div className="overflow-x-auto">
@@ -579,7 +591,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
-                                                        {yearTxs.map(tx => {
+                                                        {catTxs.map(tx => {
                                                             const remaining = Math.max(0, tx.amount - tx.paid_amount);
                                                             return (
                                                                 <tr key={tx.id} className="hover:bg-slate-50/50">

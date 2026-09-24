@@ -103,7 +103,7 @@ class FinanceController extends Controller
         }
 
         return Inertia::render('Admin/Finances/Index', [
-            'settings' => Setting::all()->pluck('value', 'key'),
+            'settings' => Setting::all(),
             'players' => $players,
             'selectedPlayer' => $selectedPlayer,
             'transactions' => $transactions,

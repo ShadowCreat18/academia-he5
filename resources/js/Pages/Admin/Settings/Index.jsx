@@ -1,27 +1,33 @@
 import React from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Settings, LogOut, ArrowLeft, Save, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Settings, LogOut, ArrowLeft, Save, Trash2, CheckCircle, XCircle, Clock, Plus } from 'lucide-react';
 
 export default function Index({ auth, settings, deletionRequests = [] }) {
-    // Convert settings array to object for initial data
-    const initialData = {};
-    settings.forEach(s => {
-        initialData[s.key] = s.value;
+    const { data, setData, put, processing, errors } = useForm({
+        settingsList: settings.map(s => ({ ...s }))
     });
 
-    const { data, setData, put, processing, errors } = useForm(initialData);
+    const addSetting = () => {
+        const newKey = 'custom_' + Date.now();
+        setData('settingsList', [...data.settingsList, { key: newKey, name: 'Nuevo Concepto', value: '0', type: 'string' }]);
+    };
+
+    const updateSetting = (index, field, val) => {
+        const newList = [...data.settingsList];
+        newList[index][field] = val;
+        setData('settingsList', newList);
+    };
+
+    const removeSetting = (index) => {
+        const newList = [...data.settingsList];
+        newList.splice(index, 1);
+        setData('settingsList', newList);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        // Convert back to array of {key, value}
-        const updatedSettings = Object.keys(data).map(key => ({
-            key,
-            value: data[key]
-        }));
-
         put(route('settings.update'), {
-            data: { settings: updatedSettings },
+            data: { settings: data.settingsList },
             preserveScroll: true,
         });
     };
@@ -61,24 +67,45 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                     
                     <form onSubmit={handleSubmit} className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {settings.map(setting => (
-                                <div key={setting.key}>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        {setting.name}
-                                    </label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span className="text-slate-400 sm:text-sm">$</span>
+                            {data.settingsList.map((setting, index) => (
+                                <div key={setting.key} className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            {setting.key.startsWith('custom_') ? (
+                                                <input 
+                                                    type="text" 
+                                                    value={setting.name} 
+                                                    onChange={e => updateSetting(index, 'name', e.target.value)}
+                                                    className="w-full text-sm border-slate-300 rounded-lg focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm mb-1 text-slate-900"
+                                                />
+                                            ) : (
+                                                setting.name
+                                            )}
+                                        </label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-slate-400 sm:text-sm">$</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={setting.value}
+                                                onChange={e => updateSetting(index, 'value', e.target.value)}
+                                                className="w-full pl-7 pr-4 py-2 text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm"
+                                            />
                                         </div>
-                                        <input
-                                            type="number"
-                                            value={data[setting.key] || ''}
-                                            onChange={e => setData(setting.key, e.target.value)}
-                                            className="w-full pl-7 pr-4 py-2 text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm"
-                                        />
                                     </div>
+                                    {setting.key.startsWith('custom_') && (
+                                        <button type="button" onClick={() => removeSetting(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg mb-0.5">
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
                                 </div>
                             ))}
+                        </div>
+                        <div className="mt-4">
+                            <button type="button" onClick={addSetting} className="text-sm font-bold text-[#0033A0] hover:text-blue-800 flex items-center gap-1">
+                                <Plus className="w-4 h-4" /> Agregar nuevo concepto
+                            </button>
                         </div>
 
                         <div className="mt-8 flex justify-end">
