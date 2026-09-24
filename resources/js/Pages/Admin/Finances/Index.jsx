@@ -147,9 +147,9 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         if ((lower.includes('inscripción') || lower.includes('inscripcion')) && lower.includes('torneo')) return 'Torneos';
         if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
         if (lower.includes('material')) return 'Material Deportivo';
-        if (lower.includes('torneo')) return 'Torneos';
         if (lower.includes('uniforme')) return 'Uniformes';
         if (lower.includes('arbitraje')) return 'Arbitrajes';
+        if (lower.includes('torneo')) return 'Torneos';
         return conceptName;
     };
 

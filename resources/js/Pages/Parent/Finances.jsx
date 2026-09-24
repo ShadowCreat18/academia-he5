@@ -11,9 +11,9 @@ const getConceptCategory = (conceptName) => {
     if ((lower.includes('inscripción') || lower.includes('inscripcion')) && lower.includes('torneo')) return 'Torneos';
     if (lower.includes('inscripción') || lower.includes('inscripcion')) return 'Inscripciones';
     if (lower.includes('material')) return 'Material Deportivo';
-    if (lower.includes('torneo')) return 'Torneos';
     if (lower.includes('uniforme')) return 'Uniformes';
     if (lower.includes('arbitraje')) return 'Arbitrajes';
+    if (lower.includes('torneo')) return 'Torneos';
     return conceptName;
 };
 
@@ -257,12 +257,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
             const isTopup = !payment.financial_transaction_id;
             let cat = 'Recargas';
             if (!isTopup && payment.financial_transaction) {
-                const concept = payment.financial_transaction.concept.toLowerCase();
-                if (concept.includes('inscripci') || concept.includes('torneo')) cat = 'Torneos';
-                else if (concept.includes('mensual')) cat = 'Mensualidades';
-                else if (concept.includes('uniforme')) cat = 'Uniformes';
-                else if (concept.includes('arbitraje')) cat = 'Arbitrajes';
-                else cat = payment.financial_transaction.concept;
+                cat = getConceptCategory(payment.financial_transaction.concept);
             }
             
             if (!byYear[year]) byYear[year] = {};
