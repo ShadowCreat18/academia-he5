@@ -122,20 +122,40 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'due_date' => 'required|date',
             'is_arbitration_penalty' => 'boolean',
+            'is_paid' => 'boolean',
         ]);
 
         $player = Player::findOrFail($request->player_id);
+        $amount = $request->amount;
+        $isPaid = $request->is_paid ?? false;
 
-        FinancialTransaction::create([
+        $transaction = FinancialTransaction::create([
             'player_id' => $player->id,
             'user_id' => $player->parents->first()->id ?? Auth::id(),
             'concept' => $request->concept,
-            'amount' => $request->amount,
-            'paid_amount' => 0,
+            'amount' => $amount,
+            'paid_amount' => $isPaid ? $amount : 0,
             'due_date' => $request->due_date,
-            'status' => 'pending',
+            'status' => $isPaid ? 'paid' : 'pending',
             'is_arbitration_penalty' => $request->is_arbitration_penalty ?? false,
         ]);
+
+        if ($isPaid) {
+            TransactionPayment::create([
+                'financial_transaction_id' => $transaction->id,
+                'user_id' => Auth::id(),
+                'amount' => $amount,
+                'method' => 'cash',
+            ]);
+            
+            if ($transaction->is_arbitration_penalty) {
+                $transaction->club_amount = ($transaction->club_amount ?? 0) + ($amount * 0.50);
+                $transaction->developer_amount = ($transaction->developer_amount ?? 0) + ($amount * 0.50);
+            } else {
+                $transaction->club_amount = ($transaction->club_amount ?? 0) + $amount;
+            }
+            $transaction->save();
+        }
 
         return back()->with('success', 'Cargo creado correctamente.');
     }
@@ -171,7 +191,9 @@ class FinanceController extends Controller
                 $status = 'partial';
             }
 
-            FinancialTransaction::create([
+            $isArbitraje = str_contains(strtolower($charge['concept']), 'arbitraje');
+
+            $transaction = FinancialTransaction::create([
                 'player_id' => $player->id,
                 'user_id' => $parentId,
                 'concept' => $charge['concept'],
@@ -179,9 +201,28 @@ class FinanceController extends Controller
                 'paid_amount' => $paidAmount,
                 'due_date' => $charge['due_date'],
                 'status' => $status,
-                'is_arbitration_penalty' => str_contains(strtolower($charge['concept']), 'arbitraje'),
-                'club_amount' => $paidAmount, // Todo lo pagado va al club por defecto
+                'is_arbitration_penalty' => $isArbitraje,
+                'club_amount' => 0, 
+                'developer_amount' => 0,
             ]);
+
+            if ($paidAmount > 0) {
+                TransactionPayment::create([
+                    'financial_transaction_id' => $transaction->id,
+                    'user_id' => Auth::id(),
+                    'amount' => $paidAmount,
+                    'method' => 'cash',
+                ]);
+
+                if ($isArbitraje) {
+                    $transaction->club_amount = $paidAmount * 0.50;
+                    $transaction->developer_amount = $paidAmount * 0.50;
+                } else {
+                    $transaction->club_amount = $paidAmount;
+                }
+                $transaction->save();
+            }
+            
             $count++;
         }
 
@@ -285,6 +326,7 @@ class FinanceController extends Controller
             'due_date' => 'required|date',
             'is_arbitration_penalty' => 'boolean',
             'include_secondary' => 'boolean',
+            'is_paid' => 'boolean',
         ]);
 
         $query = Player::where('status', 'active')->where(function ($q) use ($request) {
@@ -298,6 +340,8 @@ class FinanceController extends Controller
         $count = 0;
 
         $isArbitraje = $request->is_arbitration_penalty || str_contains(strtolower($request->concept), 'arbitraje');
+        $isPaid = $request->is_paid ?? false;
+        $amount = $request->amount;
 
         foreach ($players as $player) {
             // Si el jugador pertenece a esta categoría solo como refuerzo, 
@@ -308,16 +352,34 @@ class FinanceController extends Controller
                 }
             }
 
-            FinancialTransaction::create([
+            $transaction = FinancialTransaction::create([
                 'player_id' => $player->id,
                 'user_id' => $player->parents->first()->id ?? Auth::id(),
                 'concept' => $request->concept,
-                'amount' => $request->amount,
-                'paid_amount' => 0,
+                'amount' => $amount,
+                'paid_amount' => $isPaid ? $amount : 0,
                 'due_date' => $request->due_date,
-                'status' => 'pending',
+                'status' => $isPaid ? 'paid' : 'pending',
                 'is_arbitration_penalty' => $request->is_arbitration_penalty ?? false,
             ]);
+            
+            if ($isPaid) {
+                TransactionPayment::create([
+                    'financial_transaction_id' => $transaction->id,
+                    'user_id' => Auth::id(),
+                    'amount' => $amount,
+                    'method' => 'cash',
+                ]);
+                
+                if ($isArbitraje) {
+                    $transaction->club_amount = ($transaction->club_amount ?? 0) + ($amount * 0.50);
+                    $transaction->developer_amount = ($transaction->developer_amount ?? 0) + ($amount * 0.50);
+                } else {
+                    $transaction->club_amount = ($transaction->club_amount ?? 0) + $amount;
+                }
+                $transaction->save();
+            }
+            
             $count++;
         }
 

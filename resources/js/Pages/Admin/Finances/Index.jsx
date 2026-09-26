@@ -67,6 +67,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         amount: '',
         due_date: new Date().toISOString().split('T')[0],
         is_arbitration_penalty: false,
+        is_paid: false,
     });
 
     // ── Formulario editar cargo ──
@@ -91,6 +92,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         due_date: new Date().toISOString().split('T')[0],
         is_arbitration_penalty: false,
         include_secondary: true,
+        is_paid: false,
     });
 
     // ── Formulario múltiples cargos ──
@@ -797,6 +799,19 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                     Es cobro de Arbitraje
                                 </label>
                             </div>
+                            
+                            <div className="flex items-center space-x-2 mt-2">
+                                <input
+                                    type="checkbox"
+                                    id="is_paid"
+                                    checked={chargeForm.data.is_paid}
+                                    onChange={e => chargeForm.setData('is_paid', e.target.checked)}
+                                    className="rounded border-slate-300 text-[#0033A0] focus:ring-[#0033A0] text-slate-900"
+                                />
+                                <label htmlFor="is_paid" className="text-sm text-slate-700">
+                                    Marcar como pagado (Efectivo)
+                                </label>
+                            </div>
 
                             <div className="pt-4 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setIsChargeModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">Cancelar</button>
@@ -1087,6 +1102,19 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 />
                                 <label htmlFor="bulk_is_arbitration_penalty" className="text-sm text-slate-700">
                                     Es cobro de Arbitraje
+                                </label>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 mt-2">
+                                <input
+                                    type="checkbox"
+                                    id="bulk_is_paid"
+                                    checked={bulkForm.data.is_paid}
+                                    onChange={e => bulkForm.setData('is_paid', e.target.checked)}
+                                    className="rounded border-slate-300 text-[#0033A0] focus:ring-[#0033A0] text-slate-900"
+                                />
+                                <label htmlFor="bulk_is_paid" className="text-sm text-slate-700">
+                                    Marcar como pagados (Efectivo)
                                 </label>
                             </div>
 
