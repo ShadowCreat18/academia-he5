@@ -45,7 +45,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
             return (
                 <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
                     <span className="text-slate-600">
-                        Mensualidades pagadas este año: <strong className="text-slate-800">{fullyPaidCount} de 12</strong> completas
+                        Mensualidades pagadas este año: <strong className="text-slate-800">{fullyPaidCount} de {catTxs.length}</strong> completas
                         {partialCount > 0 && <span className="text-orange-500 ml-1">(y {partialCount} con saldo pendiente)</span>}
                     </span>
                 </div>
