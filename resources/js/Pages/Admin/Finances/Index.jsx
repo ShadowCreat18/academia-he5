@@ -29,6 +29,54 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         isArbitraje: s.key === 'cost_arbitraje' || (s.name || '').toLowerCase().includes('arbitraje')
     }));
 
+    const getSettingValue = (key) => {
+        const s = settings.find(st => st.key === key);
+        return s ? parseFloat(s.value) || 0 : 0;
+    };
+
+    const renderCategorySummary = (cat, catTxs) => {
+        const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+        const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
+        const catPending = catTotal - catPaid;
+
+        if (cat === 'Mensualidades') {
+            const fullyPaidCount = catTxs.filter(t => t.status === 'paid').length;
+            const partialCount = catTxs.filter(t => t.status === 'partial').length;
+            return (
+                <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                    <span className="text-slate-600">
+                        Mensualidades pagadas este año: <strong className="text-slate-800">{fullyPaidCount} de 12</strong> completas
+                        {partialCount > 0 && <span className="text-orange-500 ml-1">(y {partialCount} con saldo pendiente)</span>}
+                    </span>
+                </div>
+            );
+        }
+
+        let expectedCost = null;
+        if (cat === 'Inscripción Anual' || cat === 'Inscripciones') expectedCost = getSettingValue('cost_inscripcion');
+        else if (cat === 'Material Deportivo') expectedCost = getSettingValue('cost_material');
+        else if (cat === 'Uniformes') expectedCost = getSettingValue('cost_uniformes');
+        
+        if (expectedCost !== null && expectedCost > 0) {
+            const remaining = Math.max(0, expectedCost - catPaid);
+            return (
+                <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                    <span className="text-slate-500">Costo esperado: <strong className="text-slate-800">${expectedCost.toFixed(2)}</strong></span>
+                    <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                    <span className="text-red-600">Restante: <strong>${remaining.toFixed(2)}</strong></span>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
+                <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
+            </div>
+        );
+    };
+
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
     
@@ -628,11 +676,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                             <div key={cat} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
                                                 <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-2">
                                                     <h3 className="font-bold text-lg text-slate-700">📂 {cat}</h3>
-                                                    <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-                                                        <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
-                                                        <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
-                                                        <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
-                                                    </div>
+                                                    {renderCategorySummary(cat, catTxs)}
                                                 </div>
                                                 <div className="overflow-x-auto">
                                                     <table className="w-full text-sm">

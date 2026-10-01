@@ -165,6 +165,7 @@ class ParentController extends Controller
         return Inertia::render('Parent/Finances', [
             'children' => $children,
             'userPayments' => $userPayments,
+            'settings' => \App\Models\Setting::all(),
         ]);
     }
 
