@@ -26,9 +26,66 @@ const ChildFinancesCard = ({
     setSelectedWalletTx, 
     setWalletAmount, 
     handlePayWithStripe, 
-    loadingAction 
+    loadingAction,
+    settings
 }) => {
     const transactions = (child.financial_transactions || child.financialTransactions || []).filter(tx => tx.amount > tx.paid_amount);
+    const allTransactions = (child.financial_transactions || child.financialTransactions || []);
+
+    const getSettingValue = (key) => {
+        if (!settings || !Array.isArray(settings)) return 0;
+        const setting = settings.find(s => s.key === key);
+        return setting ? parseFloat(setting.value) : 0;
+    };
+
+    const renderCategorySummary = (cat, year) => {
+        const catTxs = allTransactions.filter(tx => {
+            const txYear = tx.due_date ? tx.due_date.substring(0, 4) : String(new Date().getFullYear());
+            return txYear === year && getConceptCategory(tx.concept) === cat;
+        });
+
+        const catTotal = catTxs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+        const catPaid = catTxs.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
+        const catPending = catTotal - catPaid;
+
+        if (cat === 'Mensualidades') {
+            const fullyPaidCount = catTxs.filter(t => t.status === 'paid' || (t.is_paid && t.amount <= t.paid_amount)).length;
+            const partialCount = catTxs.filter(t => t.status === 'partial' || (t.paid_amount > 0 && t.paid_amount < t.amount)).length;
+            return (
+                <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+                    <span className="text-slate-600">
+                        Mensualidades pagadas este año: <strong className="text-slate-800">{fullyPaidCount} de 12</strong> completas
+                        {partialCount > 0 && <span className="text-orange-500 ml-1">(y {partialCount} con saldo pendiente)</span>}
+                    </span>
+                </div>
+            );
+        }
+
+        let expectedCost = null;
+        if (cat === 'Inscripción Anual' || cat === 'Inscripciones') expectedCost = getSettingValue('cost_inscripcion');
+        else if (cat === 'Material Deportivo') expectedCost = getSettingValue('cost_material');
+        else if (cat === 'Uniformes') expectedCost = getSettingValue('cost_uniformes');
+        else if (cat === 'Torneos') expectedCost = getSettingValue('cost_torneo');
+        else if (cat === 'Arbitrajes') expectedCost = getSettingValue('cost_arbitraje');
+        
+        if (expectedCost !== null && expectedCost > 0) {
+            return (
+                <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+                    <span className="text-slate-500">Costo esperado: <strong className="text-slate-800">${expectedCost.toFixed(2)}</strong></span>
+                    <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                    <span className="text-red-600">Restante: <strong>${Math.max(0, expectedCost - catPaid).toFixed(2)}</strong></span>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex flex-wrap items-center gap-4 text-sm bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+                <span className="text-slate-500">Cargado: <strong className="text-slate-800">${catTotal.toFixed(2)}</strong></span>
+                <span className="text-green-600">Pagado: <strong>${catPaid.toFixed(2)}</strong></span>
+                <span className="text-red-600">Pendiente: <strong>${catPending.toFixed(2)}</strong></span>
+            </div>
+        );
+    };
     
     // Agrupar por año y luego por categoría
     const transactionsByYear = {};
@@ -145,8 +202,9 @@ const ChildFinancesCard = ({
                                     
                                     return (
                                         <div key={cat} className="border border-slate-200 rounded-xl overflow-hidden">
-                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                                                <h4 className="font-bold text-slate-700">📂 {cat}</h4>
+                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+                                                <h4 className="font-bold text-slate-700 w-full sm:w-auto">📂 {cat}</h4>
+                                                {renderCategorySummary(cat, activeYear)}
                                             </div>
                                             <div className="divide-y divide-slate-100">
                                                 {catTxs.map(tx => {
@@ -241,7 +299,7 @@ const ChildFinancesCard = ({
     );
 };
 
-export default function Finances({ auth, children = [], userPayments = [] }) {
+export default function Finances({ auth, children = [], userPayments = [], settings = [] }) {
     const [loadingAction, setLoadingAction] = useState(null);
     const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
     const [topupAmount, setTopupAmount] = useState('');
