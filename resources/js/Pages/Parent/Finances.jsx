@@ -254,9 +254,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
         const byYear = {};
         (userPayments || []).forEach(payment => {
             const isTopup = !payment.financial_transaction_id;
-            const year = (!isTopup && payment.financial_transaction?.due_date) 
-                ? payment.financial_transaction.due_date.substring(0, 4) 
-                : (payment.created_at ? payment.created_at.substring(0, 4) : String(new Date().getFullYear()));
+            const year = payment.created_at ? payment.created_at.substring(0, 4) : String(new Date().getFullYear());
             let cat = 'Recargas';
             if (!isTopup && payment.financial_transaction) {
                 cat = getConceptCategory(payment.financial_transaction.concept);
@@ -676,9 +674,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                                                         <div className="flex justify-between items-center text-xs text-slate-500">
                                                             <span>
                                                                 {new Date(
-                                                                    (!isTopup && payment.financial_transaction?.due_date) 
-                                                                    ? payment.financial_transaction.due_date 
-                                                                    : payment.created_at
+                                                                    payment.created_at
                                                                 ).toLocaleDateString('es-MX', { 
                                                                     day: 'numeric', month: 'short', year: 'numeric'
                                                                 })}

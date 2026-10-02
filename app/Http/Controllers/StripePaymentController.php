@@ -330,6 +330,8 @@ class StripePaymentController extends Controller
                 }
             });
 
+            $this->sendTelegramNotification($user, (float) $metadata->amount, $type, $metadata);
+
             return redirect()->route('parent.finances')->with('success', '¡Pago procesado con éxito! Tu estado de cuenta ha sido actualizado.');
 
         } catch (\Exception $e) {
@@ -531,6 +533,7 @@ class StripePaymentController extends Controller
             });
 
             Log::info("Stripe Webhook procesado exitosamente: tipo={$type}, usuario={$user->id}, pago={$paymentIntentId}");
+            $this->sendTelegramNotification($user, (float) $metadata->amount, $type, $metadata);
 
         } catch (\Exception $e) {
             Log::error("Stripe Webhook: error procesando pago {$paymentIntentId} — " . $e->getMessage());
@@ -538,5 +541,74 @@ class StripePaymentController extends Controller
 
         // Siempre retornamos 200 — la idempotencia garantiza que no haya doble procesamiento.
         return response()->json(['status' => 'success'], 200);
+    }
+
+    /**
+     * Enviar notificación por Telegram de pago exitoso.
+     */
+    private function sendTelegramNotification($user, $amount, $type, $metadata)
+    {
+        try {
+            $token = config('services.telegram.bot_token');
+            $chats = [
+                config('services.telegram.chat_id_chris'),
+                config('services.telegram.chat_id_hector')
+            ];
+
+            if (!$token) return;
+
+            $playerName = 'N/A';
+            $concept = 'Pago con Tarjeta';
+
+            if ($type === 'single_charge' && isset($metadata->transaction_id)) {
+                $tx = \App\Models\FinancialTransaction::with('player')->find((int) $metadata->transaction_id);
+                if ($tx) {
+                    $concept = $tx->concept;
+                    if ($tx->player) {
+                        $playerName = trim($tx->player->first_name . ' ' . $tx->player->last_name);
+                    }
+                }
+            } elseif ($type === 'multiple_charges' && isset($metadata->transaction_ids)) {
+                $txIds = explode(',', $metadata->transaction_ids);
+                $transactions = \App\Models\FinancialTransaction::with('player')->whereIn('id', $txIds)->get();
+                $concepts = [];
+                $players = [];
+                foreach ($transactions as $tx) {
+                    $concepts[] = $tx->concept;
+                    if ($tx->player) {
+                        $players[] = trim($tx->player->first_name . ' ' . $tx->player->last_name);
+                    }
+                }
+                $concept = implode(', ', array_unique($concepts));
+                $playerName = implode(', ', array_unique($players));
+            } elseif ($type === 'player_total' && isset($metadata->player_id)) {
+                $player = \App\Models\Player::find((int) $metadata->player_id);
+                if ($player) {
+                    $playerName = trim($player->first_name . ' ' . $player->last_name);
+                }
+                $concept = 'Liquidación total de adeudos';
+            } elseif ($type === 'wallet_topup') {
+                $playerName = 'General (Monedero)';
+                $concept = 'Recarga de Monedero Digital';
+            }
+
+            $text = "💰 *¡Nuevo Pago Recibido (Stripe)!*\n";
+            $text .= "👦 *Alumno:* " . $playerName . "\n";
+            $text .= "💵 *Monto:* $" . number_format($amount, 2) . " MXN\n";
+            $text .= "🏷️ *Concepto:* " . $concept . "\n";
+            $text .= "👤 *Pagó:* " . $user->name;
+
+            foreach ($chats as $chatId) {
+                if ($chatId) {
+                    \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                        'chat_id' => $chatId,
+                        'text' => $text,
+                        'parse_mode' => 'Markdown'
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Error enviando Telegram: " . $e->getMessage());
+        }
     }
 }
