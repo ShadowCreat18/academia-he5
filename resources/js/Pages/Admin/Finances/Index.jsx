@@ -709,7 +709,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                                         <td className="px-4 py-3 text-center text-slate-500">
                                                                             {tx.status === 'paid' && tx.transaction_payments && tx.transaction_payments.length > 0 ? (
                                                                                 <span className="text-green-600 font-medium" title={`Adeudo original: ${tx.due_date?.split('T')[0]}`}>
-                                                                                    {tx.transaction_payments[tx.transaction_payments.length - 1].created_at?.split('T')[0]}
+                                                                                    {new Date(tx.transaction_payments[tx.transaction_payments.length - 1].created_at).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').reverse().join('-')}
                                                                                 </span>
                                                                             ) : (
                                                                                 tx.due_date?.split('T')[0] || tx.due_date
