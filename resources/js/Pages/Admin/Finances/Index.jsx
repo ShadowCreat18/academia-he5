@@ -706,7 +706,15 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                                                         <td className="px-4 py-3 text-right text-green-700 font-medium">${parseFloat(tx.paid_amount).toFixed(2)}</td>
                                                                         <td className="px-4 py-3 text-right text-red-700 font-medium">${remaining.toFixed(2)}</td>
                                                                         <td className="px-4 py-3 text-center">{statusBadge(tx.status)}</td>
-                                                                        <td className="px-4 py-3 text-center text-slate-500">{tx.due_date?.split('T')[0] || tx.due_date}</td>
+                                                                        <td className="px-4 py-3 text-center text-slate-500">
+                                                                            {tx.status === 'paid' && tx.transaction_payments && tx.transaction_payments.length > 0 ? (
+                                                                                <span className="text-green-600 font-medium" title={`Adeudo original: ${tx.due_date?.split('T')[0]}`}>
+                                                                                    {tx.transaction_payments[tx.transaction_payments.length - 1].created_at?.split('T')[0]}
+                                                                                </span>
+                                                                            ) : (
+                                                                                tx.due_date?.split('T')[0] || tx.due_date
+                                                                            )}
+                                                                        </td>
                                                                         <td className="px-4 py-3">
                                                                             <div className="flex items-center justify-center space-x-1">
                                                                                 {tx.status !== 'paid' && (
