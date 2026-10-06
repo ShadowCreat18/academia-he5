@@ -212,12 +212,14 @@ class FinanceController extends Controller
             ]);
 
             if ($paidAmount > 0) {
-                TransactionPayment::create([
+                $payment = new TransactionPayment([
                     'financial_transaction_id' => $transaction->id,
                     'user_id' => Auth::id(),
                     'amount' => $paidAmount,
                     'method' => 'cash',
                 ]);
+                $payment->created_at = $charge['due_date'] . ' 12:00:00';
+                $payment->save();
 
                 if ($isArbitraje) {
                     $transaction->club_amount = $paidAmount * 0.50;
