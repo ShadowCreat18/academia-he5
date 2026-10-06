@@ -671,9 +671,14 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
                                                                 </p>
                                                             </div>
                                                         </div>
+                                                        {payment.financial_transaction && payment.financial_transaction.due_date && (
+                                                            <div className="text-xs text-slate-500 mb-1">
+                                                                Correspondiente al: <span className="font-medium text-slate-600">{new Date(payment.financial_transaction.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                            </div>
+                                                        )}
                                                         <div className="flex justify-between items-center text-xs text-slate-500">
                                                             <span>
-                                                                {new Date(
+                                                                <span className="font-bold text-slate-600">Pagado el:</span> {new Date(
                                                                     payment.created_at
                                                                 ).toLocaleDateString('es-MX', { 
                                                                     day: 'numeric', month: 'short', year: 'numeric'
