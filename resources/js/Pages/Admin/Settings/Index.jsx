@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Settings, LogOut, ArrowLeft, Save, Trash2, CheckCircle, XCircle, Clock, Plus } from 'lucide-react';
 
@@ -6,8 +6,33 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
     const { data, setData, put, processing, errors } = useForm({
         settings: settings.some(s => s.key === 'player_categories') 
             ? settings.map(s => ({ ...s }))
-            : [...settings.map(s => ({ ...s })), { key: 'player_categories', name: 'Categorías (separadas por comas)', value: 'Biberón (2021-2022), Asquel (2019-2020), Diente de Leche (2017-2018), Pony (2015-2016), Coyote (2013-2014), Zorros (2011-2012)', type: 'string' }]
+            : [...settings.map(s => ({ ...s })), { key: 'player_categories', name: 'Categorías de Jugadores', value: 'Biberón (2021-2022), Asquel (2019-2020), Diente de Leche (2017-2018), Pony (2015-2016), Coyote (2013-2014), Zorros (2011-2012)', type: 'string' }]
     });
+
+    const [categories, setCategories] = useState(() => {
+        const catSetting = settings.find(s => s.key === 'player_categories');
+        const defaultCats = 'Biberón (2021-2022), Asquel (2019-2020), Diente de Leche (2017-2018), Pony (2015-2016), Coyote (2013-2014), Zorros (2011-2012)';
+        return (catSetting?.value || defaultCats).split(',').map(c => c.trim()).filter(c => c !== '');
+    });
+
+    useEffect(() => {
+        const joinedCategories = categories.join(', ');
+        setData('settings', data.settings.map(s => s.key === 'player_categories' ? { ...s, value: joinedCategories } : s));
+    }, [categories]);
+
+    const updateCategory = (index, value) => {
+        const newCats = [...categories];
+        newCats[index] = value;
+        setCategories(newCats);
+    };
+
+    const removeCategory = (index) => {
+        setCategories(categories.filter((_, i) => i !== index));
+    };
+
+    const addCategory = () => {
+        setCategories([...categories, 'Nueva Categoría']);
+    };
 
     const addSetting = () => {
         const newKey = 'custom_' + Date.now();
@@ -100,15 +125,42 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                         </div>
 
                         {data.settings.find(s => s.key === 'player_categories') && (
-                            <div className="mt-8 border-t border-slate-200 pt-6">
-                                <h3 className="text-lg font-bold text-slate-800 mb-2">Categorías de Jugadores</h3>
-                                <p className="text-sm text-slate-500 mb-4">Ingresa las categorías disponibles separadas por comas. Estas aparecerán en el selector al registrar o editar un jugador.</p>
-                                <textarea
-                                    value={data.settings.find(s => s.key === 'player_categories').value}
-                                    onChange={e => updateSettingByKey('player_categories', 'value', e.target.value)}
-                                    className="w-full px-4 py-3 text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm"
-                                    rows="3"
-                                />
+                            <div className="mt-12 border-t border-slate-200 pt-8">
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-bold text-slate-800">Categorías de Jugadores</h3>
+                                    <p className="text-sm text-slate-500 mt-1">Estas categorías aparecerán en el selector al registrar o editar un jugador.</p>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {categories.map((cat, index) => (
+                                        <div key={index} className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={cat}
+                                                onChange={e => updateCategory(index, e.target.value)}
+                                                className="w-full text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm py-2.5"
+                                                placeholder="Ej. Biberón (2021-2022)"
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeCategory(index)} 
+                                                className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl"
+                                                title="Eliminar categoría"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4">
+                                    <button 
+                                        type="button" 
+                                        onClick={addCategory} 
+                                        className="text-sm font-bold text-[#0033A0] hover:text-blue-800 flex items-center gap-1"
+                                    >
+                                        <Plus className="w-4 h-4" /> Agregar nueva categoría
+                                    </button>
+                                </div>
                             </div>
                         )}
 
