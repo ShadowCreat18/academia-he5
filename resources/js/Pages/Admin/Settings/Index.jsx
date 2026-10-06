@@ -17,7 +17,10 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
 
     useEffect(() => {
         const joinedCategories = categories.join(', ');
-        setData('settings', data.settings.map(s => s.key === 'player_categories' ? { ...s, value: joinedCategories } : s));
+        setData(currentData => ({
+            ...currentData,
+            settings: currentData.settings.map(s => s.key === 'player_categories' ? { ...s, value: joinedCategories } : s)
+        }));
     }, [categories]);
 
     const updateCategory = (index, value) => {
