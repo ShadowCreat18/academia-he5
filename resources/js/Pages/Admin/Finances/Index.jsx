@@ -21,11 +21,13 @@ function statusBadge(status) {
 
 export default function Index({ auth, players = [], selectedPlayer, transactions = [], selectedPlayerId, settings = [] }) {
     
-    const dynamicConcepts = settings.map(s => ({
-        label: s.name || s.key,
-        amount: parseFloat(s.value) || 0,
-        isArbitraje: s.key === 'cost_arbitraje' || (s.name || '').toLowerCase().includes('arbitraje')
-    }));
+    const dynamicConcepts = settings
+        .filter(s => s.key && s.key.startsWith('cost_'))
+        .map(s => ({
+            label: s.name || s.key,
+            amount: parseFloat(s.value) || 0,
+            isArbitraje: s.key === 'cost_arbitraje' || (s.name || '').toLowerCase().includes('arbitraje')
+        }));
 
     const getSettingValue = (key) => {
         const s = settings.find(st => st.key === key);
