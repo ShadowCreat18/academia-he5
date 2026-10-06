@@ -22,7 +22,7 @@ function statusBadge(status) {
 export default function Index({ auth, players = [], selectedPlayer, transactions = [], selectedPlayerId, settings = [] }) {
     
     const dynamicConcepts = settings
-        .filter(s => s.key && s.key.startsWith('cost_'))
+        .filter(s => s.key !== 'player_categories' && !isNaN(parseFloat(s.value)))
         .map(s => ({
             label: s.name || s.key,
             amount: parseFloat(s.value) || 0,
