@@ -592,18 +592,18 @@ class StripePaymentController extends Controller
                 $concept = 'Recarga de Monedero Digital';
             }
 
-            $text = "💰 *¡Nuevo Pago Recibido (Stripe)!*\n";
-            $text .= "👦 *Alumno:* " . $playerName . "\n";
-            $text .= "💵 *Monto:* $" . number_format($amount, 2) . " MXN\n";
-            $text .= "🏷️ *Concepto:* " . $concept . "\n";
-            $text .= "👤 *Pagó:* " . $user->name;
+            $text = "💰 <b>¡Nuevo Pago Recibido (Stripe)!</b>\n";
+            $text .= "👦 <b>Alumno:</b> " . htmlspecialchars($playerName) . "\n";
+            $text .= "💵 <b>Monto:</b> $" . number_format($amount, 2) . " MXN\n";
+            $text .= "🏷️ <b>Concepto:</b> " . htmlspecialchars($concept) . "\n";
+            $text .= "👤 <b>Pagó:</b> " . htmlspecialchars($user->name);
 
             foreach ($chats as $chatId) {
                 if ($chatId) {
                     \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                         'chat_id' => $chatId,
                         'text' => $text,
-                        'parse_mode' => 'Markdown'
+                        'parse_mode' => 'HTML'
                     ]);
                 }
             }
