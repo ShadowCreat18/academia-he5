@@ -123,6 +123,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         due_date: new Date().toISOString().split('T')[0],
         is_arbitration_penalty: false,
         is_paid: false,
+        payment_date: new Date().toISOString().split('T')[0],
     });
 
     // ── Formulario editar cargo ──
@@ -137,6 +138,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         amount: '',
         method: 'cash',
         notes: '',
+        payment_date: new Date().toISOString().split('T')[0],
     });
 
     // ── Formulario cobro masivo ──
@@ -148,6 +150,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         is_arbitration_penalty: false,
         include_secondary: true,
         is_paid: false,
+        payment_date: new Date().toISOString().split('T')[0],
     });
 
     // ── Formulario múltiples cargos ──
@@ -872,6 +875,20 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                 </label>
                             </div>
 
+                            {chargeForm.data.is_paid && (
+                                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha en la que se realizó el pago</label>
+                                    <input
+                                        type="date"
+                                        value={chargeForm.data.payment_date}
+                                        onChange={e => chargeForm.setData('payment_date', e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-[#0033A0] text-slate-900"
+                                        required
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">Ésta es la fecha que los padres verán en su historial.</p>
+                                </div>
+                            )}
+
                             <div className="pt-4 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setIsChargeModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">Cancelar</button>
                                 <button type="submit" disabled={chargeForm.processing} className="px-5 py-2 bg-[#E31837] text-white font-bold rounded-xl hover:bg-red-700 disabled:opacity-50">Guardar Cargo</button>
@@ -1026,6 +1043,17 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                     <option value="card">Tarjeta</option>
                                 </select>
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Fecha en la que se realizó el pago</label>
+                                <input
+                                    type="date"
+                                    value={paymentForm.data.payment_date}
+                                    onChange={e => paymentForm.setData('payment_date', e.target.value)}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-[#0033A0] text-slate-900"
+                                    required
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Ésta es la fecha que los padres verán en su historial.</p>
+                            </div>
                             <div className="pt-4 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">Cancelar</button>
                                 <button type="submit" disabled={paymentForm.processing} className="px-5 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 disabled:opacity-50">Confirmar Pago</button>
@@ -1176,6 +1204,20 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
                                     Marcar como pagados (Efectivo)
                                 </label>
                             </div>
+
+                            {bulkForm.data.is_paid && (
+                                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha en la que se realizó el pago</label>
+                                    <input
+                                        type="date"
+                                        value={bulkForm.data.payment_date}
+                                        onChange={e => bulkForm.setData('payment_date', e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-[#0033A0] text-slate-900"
+                                        required
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">Ésta es la fecha que los padres verán en su historial.</p>
+                                </div>
+                            )}
 
                             <div className="pt-4 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setIsBulkModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">Cancelar</button>

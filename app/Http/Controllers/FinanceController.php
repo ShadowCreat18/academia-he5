@@ -123,6 +123,7 @@ class FinanceController extends Controller
             'due_date' => 'required|date',
             'is_arbitration_penalty' => 'boolean',
             'is_paid' => 'boolean',
+            'payment_date' => 'nullable|date',
         ]);
 
         $player = Player::findOrFail($request->player_id);
@@ -141,12 +142,16 @@ class FinanceController extends Controller
         ]);
 
         if ($isPaid) {
-            TransactionPayment::create([
+            $payment = new TransactionPayment([
                 'financial_transaction_id' => $transaction->id,
                 'user_id' => Auth::id(),
                 'amount' => $amount,
                 'method' => 'cash',
             ]);
+            if ($request->payment_date) {
+                $payment->created_at = $request->payment_date . ' ' . date('H:i:s');
+            }
+            $payment->save();
             
             if ($transaction->is_arbitration_penalty) {
                 $transaction->club_amount = ($transaction->club_amount ?? 0) + ($amount * 0.50);
@@ -278,6 +283,7 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'method' => 'required|string|in:cash,transfer,card',
             'notes' => 'nullable|string',
+            'payment_date' => 'nullable|date',
         ]);
 
         $remaining = $transaction->amount - $transaction->paid_amount;
@@ -287,12 +293,16 @@ class FinanceController extends Controller
             return back()->with('error', 'Este cargo ya está pagado.');
         }
 
-        TransactionPayment::create([
+        $payment = new TransactionPayment([
             'financial_transaction_id' => $transaction->id,
             'user_id' => Auth::id(),
             'amount' => $amountToPay,
             'method' => $request->method,
         ]);
+        if ($request->payment_date) {
+            $payment->created_at = $request->payment_date . ' ' . date('H:i:s');
+        }
+        $payment->save();
 
         $transaction->paid_amount += $amountToPay;
         if ($transaction->paid_amount >= $transaction->amount) {
@@ -327,6 +337,7 @@ class FinanceController extends Controller
             'is_arbitration_penalty' => 'boolean',
             'include_secondary' => 'boolean',
             'is_paid' => 'boolean',
+            'payment_date' => 'nullable|date',
         ]);
 
         $query = Player::where('status', 'active')->where(function ($q) use ($request) {
@@ -364,12 +375,16 @@ class FinanceController extends Controller
             ]);
             
             if ($isPaid) {
-                TransactionPayment::create([
+                $payment = new TransactionPayment([
                     'financial_transaction_id' => $transaction->id,
                     'user_id' => Auth::id(),
                     'amount' => $amount,
                     'method' => 'cash',
                 ]);
+                if ($request->payment_date) {
+                    $payment->created_at = $request->payment_date . ' ' . date('H:i:s');
+                }
+                $payment->save();
                 
                 if ($isArbitraje) {
                     $transaction->club_amount = ($transaction->club_amount ?? 0) + ($amount * 0.50);
