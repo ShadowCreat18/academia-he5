@@ -11,9 +11,7 @@ const CONCEPTS = [
     { label: 'Arbitrajes', amount: 50 },
 ];
 
-const CATEGORIES = [
-    'Diente de Leche', 'Pony'
-];
+
 
 function statusBadge(status) {
     if (status === 'paid') return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Pagado</span>;
@@ -77,8 +75,25 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
         );
     };
 
+    // Group players by category
+    const playersByCategory = {};
+    players.forEach(player => {
+        const cat = player.category || 'Sin Categoría';
+        if (!playersByCategory[cat]) playersByCategory[cat] = [];
+        playersByCategory[cat].push(player);
+    });
+    const dynamicCategories = Object.keys(playersByCategory).sort();
+
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
+    const [activeCategory, setActiveCategory] = useState(() => {
+        return dynamicCategories.length > 0 ? dynamicCategories[0] : 'Sin Categoría';
+    });
+    
+    useEffect(() => {
+        if (dynamicCategories.length > 0 && !dynamicCategories.includes(activeCategory)) {
+            setActiveCategory(dynamicCategories[0]);
+        }
+    }, [players]);
     
     // Modal states
     const [isChargeModalOpen, setIsChargeModalOpen] = useState(false);
@@ -94,14 +109,6 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
     const [payingTransaction, setPayingTransaction] = useState(null);
     const [activeTab, setActiveTab] = useState(null);
     const [activeConceptTab, setActiveConceptTab] = useState('Todas');
-
-    // Group players by category
-    const playersByCategory = {};
-    players.forEach(player => {
-        const cat = player.category || 'Sin Categoría';
-        if (!playersByCategory[cat]) playersByCategory[cat] = [];
-        playersByCategory[cat].push(player);
-    });
 
     const activePlayers = playersByCategory[activeCategory] || [];
     const filteredPlayers = activePlayers.filter(p =>
@@ -430,7 +437,7 @@ export default function Index({ auth, players = [], selectedPlayer, transactions
 
                 {/* ── Tabs de Categorías ── */}
                 <div className="mb-6 flex flex-wrap gap-2">
-                    {CATEGORIES.map(category => {
+                    {dynamicCategories.map(category => {
                         const count = playersByCategory[category]?.length || 0;
                         return (
                             <button
