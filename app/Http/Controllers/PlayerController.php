@@ -56,11 +56,19 @@ class PlayerController extends Controller
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name', 'category']);
 
+        $categoriesSetting = \App\Models\Setting::where('key', 'player_categories')->first();
+        if ($categoriesSetting && trim($categoriesSetting->value) !== '') {
+            $categoryOptions = array_map('trim', explode(',', $categoriesSetting->value));
+        } else {
+            $categoryOptions = ['Biberón (2021-2022)', 'Asquel (2019-2020)', 'Diente de Leche (2017-2018)', 'Pony (2015-2016)', 'Coyote (2013-2014)', 'Zorros (2011-2012)'];
+        }
+
         return inertia('Admin/Players/Index', [
             'playersByCategory' => $playersByCategory,
             'inactivePlayers' => $inactivePlayers,
             'parents' => $parents,
             'allPlayers' => $allPlayers,
+            'categoryOptions' => $categoryOptions,
         ]);
     }
 

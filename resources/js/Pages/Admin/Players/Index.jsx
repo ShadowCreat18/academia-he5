@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Users, User, LogOut, ArrowLeft, Plus, X, UserPlus, Search, Download, Camera, Trash2, Edit, CheckSquare, AlertCircle, UserMinus, ListPlus, Trash, RotateCcw } from 'lucide-react';
 
-export default function Index({ auth, playersByCategory, inactivePlayers = [], parents, allPlayers = [], flash }) {
+export default function Index({ auth, playersByCategory, inactivePlayers = [], parents, allPlayers = [], flash, categoryOptions = [] }) {
     const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
     const [isParentModalOpen, setIsParentModalOpen] = useState(false);
     const [isMultiModalOpen, setIsMultiModalOpen] = useState(false);
@@ -365,12 +365,9 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                 defaultValue=""
                             >
                                 <option value="" disabled>Selecciona...</option>
-                                <option value="Diente de Leche">Diente de leche</option>
-                                <option value="Pony">Pony</option>
-                                <option value="Asquel">Asquel</option>
-                                <option value="Biberon">Biberón</option>
-                                <option value="Coyote">Coyote</option>
-                                <option value="Zorros">Zorros</option>
+                                {categoryOptions.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
                             </select>
                             <button onClick={() => setSelectedPlayerIds([])} className="text-slate-500 hover:text-red-500 text-sm">Cancelar</button>
                         </div>
@@ -563,12 +560,9 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                             className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#0033A0] outline-none text-slate-900 bg-white"
                                         >
                                             <option value="">Selecciona...</option>
-                                            <option value="Biberon">Biberón (2021-2022)</option>
-                                            <option value="Asquel">Asquel (2019-2020)</option>
-                                            <option value="Diente de Leche">Diente de Leche (2017-2018)</option>
-                                            <option value="Pony">Pony (2015-2016)</option>
-                                            <option value="Coyote">Coyote (2013-2014)</option>
-                                            <option value="Zorros">Zorros (2011-2012)</option>
+                                            {categoryOptions.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>
@@ -579,12 +573,9 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                             className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#0033A0] outline-none text-slate-900 bg-white"
                                         >
                                             <option value="">Ninguna...</option>
-                                            <option value="Biberon">Biberón (2021-2022)</option>
-                                            <option value="Asquel">Asquel (2019-2020)</option>
-                                            <option value="Diente de Leche">Diente de Leche (2017-2018)</option>
-                                            <option value="Pony">Pony (2015-2016)</option>
-                                            <option value="Coyote">Coyote (2013-2014)</option>
-                                            <option value="Zorros">Zorros (2011-2012)</option>
+                                            {categoryOptions.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>
@@ -802,12 +793,9 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                                     <td className="p-2">
                                                         <select required value={p.category} onChange={e => updateMultiRow(index, 'category', e.target.value)} className="w-full min-w-[130px] px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] outline-none text-slate-900 bg-white">
                                                             <option value="" disabled>Selecciona...</option>
-                                                            <option value="Diente de Leche">Diente de leche (17-18)</option>
-                                                            <option value="Pony">Pony (15-16)</option>
-                                                            <option value="Asquel">Asquel (19-20)</option>
-                                                            <option value="Biberon">Biberón (21-22)</option>
-                                                            <option value="Coyote">Coyote (13-14)</option>
-                                                            <option value="Zorros">Zorros (11-12)</option>
+                                                            {categoryOptions.map(cat => (
+                                                                <option key={cat} value={cat}>{cat}</option>
+                                                            ))}
                                                         </select>
                                                     </td>
                                                     <td className="p-2">

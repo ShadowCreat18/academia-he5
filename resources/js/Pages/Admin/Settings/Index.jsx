@@ -4,7 +4,9 @@ import { Settings, LogOut, ArrowLeft, Save, Trash2, CheckCircle, XCircle, Clock,
 
 export default function Index({ auth, settings, deletionRequests = [] }) {
     const { data, setData, put, processing, errors } = useForm({
-        settings: settings.map(s => ({ ...s }))
+        settings: settings.some(s => s.key === 'player_categories') 
+            ? settings.map(s => ({ ...s }))
+            : [...settings.map(s => ({ ...s })), { key: 'player_categories', name: 'Categorías (separadas por comas)', value: 'Biberón (2021-2022), Asquel (2019-2020), Diente de Leche (2017-2018), Pony (2015-2016), Coyote (2013-2014), Zorros (2011-2012)', type: 'string' }]
     });
 
     const addSetting = () => {
@@ -12,16 +14,12 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
         setData('settings', [...data.settings, { key: newKey, name: 'Nuevo Concepto', value: '0', type: 'string' }]);
     };
 
-    const updateSetting = (index, field, val) => {
-        const newList = [...data.settings];
-        newList[index][field] = val;
-        setData('settings', newList);
+    const updateSettingByKey = (key, field, val) => {
+        setData('settings', data.settings.map(s => s.key === key ? { ...s, [field]: val } : s));
     };
 
-    const removeSetting = (index) => {
-        const newList = [...data.settings];
-        newList.splice(index, 1);
-        setData('settings', newList);
+    const removeSettingByKey = (key) => {
+        setData('settings', data.settings.filter(s => s.key !== key));
     };
 
     const handleSubmit = (e) => {
@@ -66,14 +64,14 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                     
                     <form onSubmit={handleSubmit} className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {data.settings.map((setting, index) => (
+                            {data.settings.filter(s => s.key !== 'player_categories').map((setting) => (
                                 <div key={setting.key} className="flex gap-2 items-end">
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-slate-700 mb-2">
                                             <input 
                                                 type="text" 
                                                 value={setting.name} 
-                                                onChange={e => updateSetting(index, 'name', e.target.value)}
+                                                onChange={e => updateSettingByKey(setting.key, 'name', e.target.value)}
                                                 className="w-full text-sm border-slate-300 rounded-lg focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm mb-1 text-slate-900"
                                             />
                                         </label>
@@ -84,14 +82,14 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                                             <input
                                                 type="number"
                                                 value={setting.value}
-                                                onChange={e => updateSetting(index, 'value', e.target.value)}
+                                                onChange={e => updateSettingByKey(setting.key, 'value', e.target.value)}
                                                 className="w-full pl-7 pr-4 py-2 text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm"
                                             />
                                         </div>
                                     </div>
-                                        <button type="button" onClick={() => removeSetting(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg mb-0.5">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                                    <button type="button" onClick={() => removeSettingByKey(setting.key)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg mb-0.5">
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -100,6 +98,19 @@ export default function Index({ auth, settings, deletionRequests = [] }) {
                                 <Plus className="w-4 h-4" /> Agregar nuevo concepto
                             </button>
                         </div>
+
+                        {data.settings.find(s => s.key === 'player_categories') && (
+                            <div className="mt-8 border-t border-slate-200 pt-6">
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">Categorías de Jugadores</h3>
+                                <p className="text-sm text-slate-500 mb-4">Ingresa las categorías disponibles separadas por comas. Estas aparecerán en el selector al registrar o editar un jugador.</p>
+                                <textarea
+                                    value={data.settings.find(s => s.key === 'player_categories').value}
+                                    onChange={e => updateSettingByKey('player_categories', 'value', e.target.value)}
+                                    className="w-full px-4 py-3 text-slate-900 border-slate-300 rounded-xl focus:ring-[#0033A0] focus:border-[#0033A0] shadow-sm"
+                                    rows="3"
+                                />
+                            </div>
+                        )}
 
                         <div className="mt-8 flex justify-end">
                             <button
