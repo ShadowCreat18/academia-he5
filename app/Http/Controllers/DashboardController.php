@@ -66,7 +66,7 @@ class DashboardController extends Controller
             }
 
             // Calcular ingresos mensuales y distribución para las gráficas
-            $payments = \App\Models\TransactionPayment::with('financialTransaction')
+            $payments = \App\Models\TransactionPayment::with('financialTransaction.player')
                 ->whereNotNull('financial_transaction_id')
                 ->get();
             
@@ -87,7 +87,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $payment->id,
                     'amount' => (float) $payment->amount,
-                    'created_at' => $payment->created_at->format('Y-m-d H:i:s'),
+                    'created_at' => $payment->created_at ? $payment->created_at->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
                     'concept' => $tx->concept,
                     'player_category' => $playerCat,
                 ];
