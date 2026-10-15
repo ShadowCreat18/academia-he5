@@ -52,14 +52,7 @@ const TiltCard = ({ children, className = "" }) => {
     );
 };
 
-const getPhotoUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/images/')) return path;
-    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
-    return `/storage/${clean}`;
-};
-
-export default function Welcome({ players = [] }) {
+export default function Welcome() {
     const [scrolled, setScrolled] = useState(false);
     const [selectedImg, setSelectedImg] = useState(null);
 
@@ -421,91 +414,30 @@ export default function Welcome({ players = [] }) {
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {players && players.length > 0 ? (
-                                players.map((player, i) => {
-                                    const photoUrl = getPhotoUrl(player.photo_path);
-                                    return (
-                                        <motion.div 
-                                            key={player.id}
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            whileInView={{ opacity: 1, scale: 1 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: (i % 4) * 0.1 }}
-                                            onClick={() => setSelectedImg({ 
-                                                src: photoUrl, 
-                                                caption: `${player.first_name} ${player.last_name}${player.category ? ` · ${player.category}` : ''}` 
-                                            })}
-                                            className="cursor-pointer group relative rounded-2xl overflow-hidden h-56 md:h-64 shadow-md hover:shadow-xl transition-all border border-slate-200 bg-white flex flex-col"
-                                        >
-                                            <div className="relative flex-1 w-full overflow-hidden bg-slate-100">
-                                                {photoUrl ? (
-                                                    <img 
-                                                        src={photoUrl} 
-                                                        alt={`${player.first_name} ${player.last_name}`}
-                                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            if (e.target.nextElementSibling) {
-                                                                e.target.nextElementSibling.style.display = 'flex';
-                                                            }
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                <div 
-                                                    className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100" 
-                                                    style={{ display: photoUrl ? 'none' : 'flex' }}
-                                                >
-                                                    <Camera className="w-10 h-10 mb-2 opacity-30" />
-                                                    <span className="text-xs font-semibold text-slate-400">HE-5</span>
-                                                </div>
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-                                                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                                                    <p className="font-heading font-black text-sm md:text-base leading-tight drop-shadow-md">
-                                                        {player.first_name} {player.last_name}
-                                                    </p>
-                                                    <div className="flex items-center justify-between mt-1">
-                                                        {player.category && (
-                                                            <span className="inline-block text-[11px] font-semibold text-blue-200 drop-shadow-sm">
-                                                                {player.category}
-                                                            </span>
-                                                        )}
-                                                        {player.jersey_number && (
-                                                            <span className="inline-block text-[11px] font-bold px-1.5 py-0.5 bg-[#E31837] text-white rounded-md drop-shadow-sm">
-                                                                #{player.jersey_number}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })
-                            ) : (
-                                playersData.map((item, i) => (
-                                    <motion.div 
-                                        key={item.id}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        whileInView={{ opacity: 1, scale: 1 }}
-                                        viewport={{ once: true }}
-                                        transition={{ delay: (i % 4) * 0.1 }}
-                                        onClick={() => setSelectedImg({ src: `/images/${item.img}`, caption: "Futuras Estrellas" })}
-                                        className="cursor-pointer group relative rounded-2xl overflow-hidden h-48 md:h-56 shadow-md hover:shadow-xl transition-all"
-                                    >
-                                        <div className="absolute inset-0 bg-[#0033A0]/10 group-hover:bg-transparent transition-colors z-10"></div>
-                                        <img 
-                                            src={`/images/${item.img}`} 
-                                            alt="Jugador entrenando"
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                            onError={(e) => { e.target.style.opacity = 0; }}
-                                            onLoad={(e) => { e.target.style.opacity = 1; e.target.parentElement.querySelector('.placeholder-text')?.remove(); }}
-                                        />
-                                        <div className="placeholder-text absolute inset-0 flex flex-col items-center justify-center text-slate-400 font-bold text-sm bg-slate-100 -z-10">
-                                            <Camera className="w-8 h-8 mb-2 opacity-30" />
-                                            {item.img}
-                                        </div>
-                                    </motion.div>
-                                ))
-                            )}
+                            {playersData.map((item, i) => (
+                                <motion.div 
+                                    key={item.id}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: (i % 4) * 0.1 }}
+                                    onClick={() => setSelectedImg({ src: `/images/${item.img}`, caption: "Futuras Estrellas" })}
+                                    className="cursor-pointer group relative rounded-2xl overflow-hidden h-48 md:h-56 shadow-md hover:shadow-xl transition-all"
+                                >
+                                    <div className="absolute inset-0 bg-[#0033A0]/10 group-hover:bg-transparent transition-colors z-10"></div>
+                                    <img 
+                                        src={`/images/${item.img}`} 
+                                        alt="Jugador entrenando"
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                        onError={(e) => { e.target.style.opacity = 0; }}
+                                        onLoad={(e) => { e.target.style.opacity = 1; e.target.parentElement.querySelector('.placeholder-text')?.remove(); }}
+                                    />
+                                    <div className="placeholder-text absolute inset-0 flex flex-col items-center justify-center text-slate-400 font-bold text-sm bg-slate-100 -z-10">
+                                        <Camera className="w-8 h-8 mb-2 opacity-30" />
+                                        {item.img}
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
                     </div>
 

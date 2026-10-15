@@ -13,22 +13,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
-    try {
-        $players = \App\Models\Player::whereNotNull('photo_path')
-            ->where('photo_path', '!=', '')
-            ->where(function ($q) {
-                $q->where('status', 'active')->orWhereNull('status');
-            })
-            ->select('id', 'first_name', 'last_name', 'photo_path', 'category', 'jersey_number')
-            ->take(24)
-            ->get();
-    } catch (\Throwable $e) {
-        $players = collect();
-    }
-
-    return Inertia::render('Welcome', [
-        'players' => $players,
-    ]);
+    return Inertia::render('Welcome');
 });
 
 Route::get('/limpiar-cache-total', function () {
