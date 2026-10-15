@@ -27,6 +27,8 @@ Route::get('/limpiar-cache-total', function () {
     } catch (\Throwable $e) {}
     return response('<h1>Caché de Laravel limpia y Storage link verificado.</h1><p>Si sigues viendo la versión vieja, purga la caché desde el panel de Hostinger (LiteSpeed).</p>')
            ->header('X-LiteSpeed-Purge', '*');
+});
+
 Route::get('/debug-log', function () {
     $logFile = storage_path('logs/laravel.log');
     if (!file_exists($logFile)) return 'No log file found';
