@@ -2,6 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { Users, Search, Edit2, Key, Trash2, X, Phone, User as UserIcon, Camera, Save, Loader2, DollarSign, LogOut, ArrowLeft, Settings } from 'lucide-react';
 
+const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    return `/storage/${clean}`;
+};
+
 export default function Index({ auth, parents, flash }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('Todas');
@@ -191,7 +198,7 @@ export default function Index({ auth, parents, flash }) {
                                                     <div className="flex items-center">
                                                         <div className="flex-shrink-0 h-10 w-10">
                                                             {parent.profile_photo_path ? (
-                                                                <img className="h-10 w-10 rounded-full object-cover border-2 border-slate-200" src={`/storage/${parent.profile_photo_path}`} alt="" />
+                                                                <img className="h-10 w-10 rounded-full object-cover border-2 border-slate-200" src={getPhotoUrl(parent.profile_photo_path)} alt="" />
                                                             ) : (
                                                                 <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-200 text-slate-400">
                                                                     <UserIcon className="h-5 w-5" />
@@ -293,7 +300,7 @@ export default function Index({ auth, parents, flash }) {
                                     <div className="flex-shrink-0 flex flex-col items-center gap-2">
                                         <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-lg relative flex items-center justify-center">
                                             {editingParent.profile_photo_path ? (
-                                                <img src={`/storage/${editingParent.profile_photo_path}`} alt="Perfil" className="w-full h-full object-cover" />
+                                                <img src={getPhotoUrl(editingParent.profile_photo_path)} alt="Perfil" className="w-full h-full object-cover" />
                                             ) : (
                                                 <UserIcon className="w-12 h-12 text-slate-300" />
                                             )}

@@ -4,6 +4,13 @@ import { User, MapPin, Phone, ShieldCheck, Trophy, Calendar, Trash2, AlertTriang
 import ParentLayout from '@/Layouts/ParentLayout';
 import CameraCapture from '@/Components/CameraCapture';
 
+const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    return `/storage/${clean}`;
+};
+
 export default function Dashboard({ auth, needsConsent = false, nextGame = null, childrenCount = 0, deletionRequest = null }) {
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -220,7 +227,7 @@ export default function Dashboard({ auth, needsConsent = false, nextGame = null,
                             <div className="flex items-center space-x-4 mb-6">
                                 <div className="h-16 w-16 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                                     {auth.user.profile_photo_path ? (
-                                        <img src={`/storage/${auth.user.profile_photo_path}`} alt={auth.user.name} className="w-full h-full object-cover" />
+                                        <img src={getPhotoUrl(auth.user.profile_photo_path)} alt={auth.user.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <User className="h-8 w-8 text-slate-400" />
                                     )}

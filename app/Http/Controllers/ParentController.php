@@ -220,14 +220,24 @@ class ParentController extends Controller
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
             $filename = uniqid('parent_') . '.' . $file->getClientOriginalExtension();
-            $path = public_path('storage/profile-photos/' . $filename);
             
-            if (!file_exists(public_path('storage/profile-photos'))) {
-                mkdir(public_path('storage/profile-photos'), 0755, true);
+            $storageFolder = storage_path('app/public/profile-photos');
+            $publicFolder = public_path('storage/profile-photos');
+
+            if (!file_exists($storageFolder)) {
+                @mkdir($storageFolder, 0755, true);
             }
-            
-            // Move the file instead of using Intervention Image since we don't resize parents yet
-            $file->move(public_path('storage/profile-photos'), $filename);
+            if (!file_exists($publicFolder)) {
+                @mkdir($publicFolder, 0755, true);
+            }
+
+            $storagePath = $storageFolder . '/' . $filename;
+            $publicPath = $publicFolder . '/' . $filename;
+
+            $file->move($storageFolder, $filename);
+            if (!file_exists($publicPath) || realpath($storagePath) !== realpath($publicPath)) {
+                @copy($storagePath, $publicPath);
+            }
             $user->profile_photo_path = 'profile-photos/' . $filename;
         }
 

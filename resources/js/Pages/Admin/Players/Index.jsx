@@ -2,6 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Users, User, LogOut, ArrowLeft, Plus, X, UserPlus, Search, Download, Camera, Trash2, Edit, CheckSquare, AlertCircle, UserMinus, ListPlus, Trash, RotateCcw } from 'lucide-react';
 
+const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    return `/storage/${clean}`;
+};
+
 export default function Index({ auth, playersByCategory, inactivePlayers = [], parents, allPlayers = [], flash, categoryOptions = [] }) {
     const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
     const [isParentModalOpen, setIsParentModalOpen] = useState(false);
@@ -109,7 +116,7 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
             photo: null,
             _method: 'PUT'
         });
-        setPhotoPreview(player.photo_path ? `/storage/${player.photo_path}` : null);
+        setPhotoPreview(getPhotoUrl(player.photo_path));
         setIsPlayerModalOpen(true);
     };
 
@@ -393,7 +400,7 @@ export default function Index({ auth, playersByCategory, inactivePlayers = [], p
                                     {player.photo_path ? (
                                         <>
                                             <img 
-                                                src={`/storage/${player.photo_path}`} 
+                                                src={getPhotoUrl(player.photo_path)} 
                                                 alt="Foto" 
                                                 className="w-full h-full object-cover" 
                                                 onError={(e) => {

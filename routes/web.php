@@ -13,7 +13,22 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome');
+    try {
+        $players = \App\Models\Player::whereNotNull('photo_path')
+            ->where('photo_path', '!=', '')
+            ->where(function ($q) {
+                $q->where('status', 'active')->orWhereNull('status');
+            })
+            ->select('id', 'first_name', 'last_name', 'photo_path', 'category', 'jersey_number')
+            ->take(24)
+            ->get();
+    } catch (\Throwable $e) {
+        $players = collect();
+    }
+
+    return Inertia::render('Welcome', [
+        'players' => $players,
+    ]);
 });
 
 Route::get('/limpiar-cache-total', function () {
@@ -115,20 +130,50 @@ Route::middleware(['auth', 'throttle:60,1', 'role:parent'])->group(function () {
 
 // Fallback to serve storage files directly if symlink is missing or broken on shared hosting
 Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-    if (!file_exists($fullPath)) {
+    $cleanPath = ltrim(preg_replace('#^storage/#', '', $path), '/');
+
+    $candidates = [
+        storage_path('app/public/' . $cleanPath),
+        public_path('storage/' . $cleanPath),
+        storage_path('app/public/' . $path),
+        public_path('storage/' . $path),
+    ];
+
+    $fullPath = null;
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate) && is_file($candidate)) {
+            $fullPath = $candidate;
+            break;
+        }
+    }
+
+    if (!$fullPath) {
         abort(404);
     }
     
     // Check if it's a valid mime type (basic security check)
-    $mimeType = mime_content_type($fullPath);
-    if (!$mimeType || strpos($mimeType, 'image/') !== 0) {
-        // You can allow PDFs or other types if needed, for now just images
-        // Actually let's allow images and PDFs
-        if (strpos($mimeType, 'application/pdf') !== 0 && strpos($mimeType, 'image/') !== 0) {
-            abort(404);
+    $mimeType = @mime_content_type($fullPath) ?: 'image/jpeg';
+    if ($mimeType && strpos($mimeType, 'image/') !== 0 && strpos($mimeType, 'application/pdf') !== 0) {
+        abort(403);
+    }
+
+    // Auto-sync: if public/storage is a physical directory (not a symlink), copy the file
+    $publicCandidate = public_path('storage/' . $cleanPath);
+    if (!file_exists($publicCandidate) && !is_link(public_path('storage'))) {
+        $dir = dirname($publicCandidate);
+        if (!file_exists($dir)) {
+            @mkdir($dir, 0755, true);
         }
+        @copy($fullPath, $publicCandidate);
     }
     
-    return response()->file($fullPath);
-})->where('path', '.*');
+    return response()->file($fullPath, [
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->where('path', '.*')->withoutMiddleware([
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+]);

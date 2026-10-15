@@ -3,6 +3,13 @@ import { Head, useForm } from '@inertiajs/react';
 import { Users, SquarePen, User, ShieldCheck } from 'lucide-react';
 import ParentLayout from '@/Layouts/ParentLayout';
 
+const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    return `/storage/${clean}`;
+};
+
 export default function Children({ children = [] }) {
     const [editingChild, setEditingChild] = useState(null);
 
@@ -157,7 +164,7 @@ export default function Children({ children = [] }) {
                                         {child.photo_path ? (
                                             <>
                                                 <img 
-                                                    src={`/storage/${child.photo_path}`} 
+                                                    src={getPhotoUrl(child.photo_path)} 
                                                     alt={child.first_name} 
                                                     className="w-full h-full object-cover" 
                                                     onError={(e) => {

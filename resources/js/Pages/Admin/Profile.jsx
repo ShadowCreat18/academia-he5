@@ -13,9 +13,16 @@ export default function Profile({ auth, flash }) {
         photo: null,
     });
 
+const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/?storage\//, '').replace(/^\//, '');
+    return `/storage/${clean}`;
+};
+
     const [isEditingPassword, setIsEditingPassword] = useState(false);
 
-    const [photoPreview, setPhotoPreview] = useState(auth.user.profile_photo_path ? `/storage/${auth.user.profile_photo_path}` : null);
+    const [photoPreview, setPhotoPreview] = useState(getPhotoUrl(auth.user.profile_photo_path));
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];

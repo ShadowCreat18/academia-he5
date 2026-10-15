@@ -100,11 +100,23 @@ class PlayerController extends Controller
             $image = $manager->decode($file);
             $image->cover(250, 300);
             
-            $path = public_path('storage/photos/' . $filename);
-            if (!file_exists(public_path('storage/photos'))) {
-                mkdir(public_path('storage/photos'), 0755, true);
+            $storageFolder = storage_path('app/public/photos');
+            $publicFolder = public_path('storage/photos');
+
+            if (!file_exists($storageFolder)) {
+                @mkdir($storageFolder, 0755, true);
             }
-            $image->save($path);
+            if (!file_exists($publicFolder)) {
+                @mkdir($publicFolder, 0755, true);
+            }
+
+            $storagePath = $storageFolder . '/' . $filename;
+            $publicPath = $publicFolder . '/' . $filename;
+
+            $image->save($storagePath);
+            if (!file_exists($publicPath) || realpath($storagePath) !== realpath($publicPath)) {
+                @copy($storagePath, $publicPath);
+            }
             $photoPath = 'photos/' . $filename;
         }
 
@@ -228,11 +240,23 @@ class PlayerController extends Controller
             $image = $manager->decode($file);
             $image->cover(250, 300);
             
-            $path = public_path('storage/photos/' . $filename);
-            if (!file_exists(public_path('storage/photos'))) {
-                mkdir(public_path('storage/photos'), 0755, true);
+            $storageFolder = storage_path('app/public/photos');
+            $publicFolder = public_path('storage/photos');
+
+            if (!file_exists($storageFolder)) {
+                @mkdir($storageFolder, 0755, true);
             }
-            $image->save($path);
+            if (!file_exists($publicFolder)) {
+                @mkdir($publicFolder, 0755, true);
+            }
+
+            $storagePath = $storageFolder . '/' . $filename;
+            $publicPath = $publicFolder . '/' . $filename;
+
+            $image->save($storagePath);
+            if (!file_exists($publicPath) || realpath($storagePath) !== realpath($publicPath)) {
+                @copy($storagePath, $publicPath);
+            }
             $player->photo_path = 'photos/' . $filename;
         }
 
