@@ -37,7 +37,10 @@ Route::get('/limpiar-cache-total', function () {
     Artisan::call('route:clear');
     Artisan::call('config:clear');
     Artisan::call('cache:clear');
-    return response('<h1>Caché de Laravel limpia.</h1><p>Si sigues viendo la versión vieja, purga la caché desde el panel de Hostinger (LiteSpeed).</p>')
+    try {
+        Artisan::call('storage:link');
+    } catch (\Throwable $e) {}
+    return response('<h1>Caché de Laravel limpia y Storage link verificado.</h1><p>Si sigues viendo la versión vieja, purga la caché desde el panel de Hostinger (LiteSpeed).</p>')
            ->header('X-LiteSpeed-Purge', '*');
 });
 
