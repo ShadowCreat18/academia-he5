@@ -29,13 +29,6 @@ Route::get('/limpiar-cache-total', function () {
            ->header('X-LiteSpeed-Purge', '*');
 });
 
-Route::get('/debug-log', function () {
-    $logFile = storage_path('logs/laravel.log');
-    if (!file_exists($logFile)) return 'No log file found';
-    $lines = file($logFile);
-    return '<pre>' . htmlspecialchars(implode('', array_slice($lines, -80))) . '</pre>';
-});
-
 Route::middleware(['guest', 'throttle:10,1'])->group(function () {
     Route::get('/login', [\App\Http\Controllers\AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
