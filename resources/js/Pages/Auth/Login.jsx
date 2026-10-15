@@ -10,7 +10,9 @@ export default function Login() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('login'));
+        post('/login', {
+            preserveScroll: true,
+        });
     };
 
     return (

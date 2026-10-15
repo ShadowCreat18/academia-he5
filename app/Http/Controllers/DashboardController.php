@@ -42,7 +42,7 @@ class DashboardController extends Controller
             $categoriesStats['General'] = [
                 'activePlayers' => $players->count(),
                 'income' => $transactions->where('is_arbitration_penalty', false)->filter(function($tx) {
-                    return !str_contains(strtolower($tx->concept), 'arbitraje');
+                    return !str_contains(strtolower($tx->concept ?? ''), 'arbitraje');
                 })->sum('paid_amount'), // Ingresos globales excluyendo arbitraje
                 'overdue' => $transactions->where('status', '!=', 'paid')->sum(function($tx) {
                     return max(0, $tx->amount - $tx->paid_amount);
@@ -57,7 +57,7 @@ class DashboardController extends Controller
                 $categoriesStats[$cat] = [
                     'activePlayers' => $catPlayers->count(),
                     'income' => $catTxs->where('is_arbitration_penalty', false)->filter(function($tx) {
-                        return !str_contains(strtolower($tx->concept), 'arbitraje');
+                        return !str_contains(strtolower($tx->concept ?? ''), 'arbitraje');
                     })->sum('paid_amount'),
                     'overdue' => $catTxs->where('status', '!=', 'paid')->sum(function($tx) {
                         return max(0, $tx->amount - $tx->paid_amount);
@@ -75,7 +75,7 @@ class DashboardController extends Controller
                 $tx = $payment->financialTransaction;
                 if (!$tx) return false;
                 if ($tx->is_arbitration_penalty) return false;
-                if (str_contains(strtolower($tx->concept), 'arbitraje')) return false;
+                if (str_contains(strtolower($tx->concept ?? ''), 'arbitraje')) return false;
                 return true;
             });
 
