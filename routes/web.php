@@ -29,6 +29,22 @@ Route::get('/limpiar-cache-total', function () {
            ->header('X-LiteSpeed-Purge', '*');
 });
 
+Route::get('/actualizar-env-telegram', function () {
+    $envPath = base_path('.env');
+    if (!file_exists($envPath)) return 'No .env found';
+    $content = file_get_contents($envPath);
+    $newToken = '8647480119:AAFoB0Jis44GF5VfdRLciJJaR8yFX3PJYhY';
+    if (str_contains($content, 'TELEGRAM_BOT_TOKEN=')) {
+        $content = preg_replace('/TELEGRAM_BOT_TOKEN=.*/', 'TELEGRAM_BOT_TOKEN=' . $newToken, $content);
+    } else {
+        $content .= "\nTELEGRAM_BOT_TOKEN=" . $newToken . "\n";
+    }
+    file_put_contents($envPath, $content);
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    return 'TELEGRAM_BOT_TOKEN actualizado correctamente en el servidor.';
+});
+
 Route::middleware(['guest', 'throttle:10,1'])->group(function () {
     Route::get('/login', [\App\Http\Controllers\AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
