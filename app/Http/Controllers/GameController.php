@@ -263,11 +263,11 @@ class GameController extends Controller
     public function updateNotifiedPlayers(Request $request, Game $game)
     {
         $request->validate([
-            'notified_players' => 'array'
+            'notified_players' => 'nullable|array'
         ]);
 
         $game->update([
-            'notified_players' => $request->notified_players
+            'notified_players' => $request->notified_players ?? []
         ]);
 
         return back()->with('success', 'Jugadores notificados actualizados.');

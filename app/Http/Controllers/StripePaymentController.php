@@ -555,7 +555,10 @@ class StripePaymentController extends Controller
                 config('services.telegram.chat_id_hector')
             ];
 
-            if (!$token) return;
+            if (!$token) {
+                Log::warning("Telegram: bot_token no configurado en config('services.telegram.bot_token').");
+                return;
+            }
 
             $playerName = 'N/A';
             $concept = 'Pago con Tarjeta';
@@ -600,11 +603,17 @@ class StripePaymentController extends Controller
 
             foreach ($chats as $chatId) {
                 if ($chatId) {
-                    \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    $response = \Illuminate\Support\Facades\Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
                         'chat_id' => $chatId,
                         'text' => $text,
                         'parse_mode' => 'HTML'
                     ]);
+
+                    if (!$response->successful()) {
+                        Log::error("Telegram error al enviar a {$chatId} (HTTP {$response->status()}): " . $response->body());
+                    } else {
+                        Log::info("Telegram enviado exitosamente a {$chatId}");
+                    }
                 }
             }
         } catch (\Exception $e) {

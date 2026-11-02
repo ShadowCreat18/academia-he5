@@ -126,7 +126,10 @@ export default function Matches({ auth, games, players, categories, senderPhone 
 
     const openWhatsAppModal = (game) => {
         setSelectedGame(game);
-        setConfirmedPlayers(game.notified_players || []);
+        const savedConfirmed = Array.isArray(game.notified_players)
+            ? game.notified_players.map(id => Number(id))
+            : [];
+        setConfirmedPlayers(savedConfirmed);
         setCopied(false);
         const dateObj = parseLocalDate(game.date);
         const formattedDate = format(dateObj, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es });
@@ -167,16 +170,27 @@ export default function Matches({ auth, games, players, categories, senderPhone 
     };
 
     const toggleConfirmed = (playerId) => {
+        const idNum = Number(playerId);
         let newConfirmed = [];
-        if (confirmedPlayers.includes(playerId)) {
-            newConfirmed = confirmedPlayers.filter(id => id !== playerId);
+        if (confirmedPlayers.some(id => Number(id) === idNum)) {
+            newConfirmed = confirmedPlayers.filter(id => Number(id) !== idNum);
         } else {
-            newConfirmed = [...confirmedPlayers, playerId];
+            newConfirmed = [...confirmedPlayers, idNum];
         }
         setConfirmedPlayers(newConfirmed);
         
         if (selectedGame) {
-            axios.put(route('matches.notified', selectedGame.id), { notified_players: newConfirmed }).catch(err => console.error(err));
+            selectedGame.notified_players = newConfirmed;
+            const gameInList = games.find(g => g.id === selectedGame.id);
+            if (gameInList) {
+                gameInList.notified_players = newConfirmed;
+            }
+            router.put(route('matches.notified', selectedGame.id), { 
+                notified_players: newConfirmed 
+            }, { 
+                preserveScroll: true,
+                preserveState: true,
+            });
         }
     };
 
@@ -389,27 +403,36 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                         <>
                             <button
                                 onClick={() => openWhatsAppModal(game)}
-                                className="flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 font-medium text-sm rounded-lg hover:bg-green-100 transition-colors"
+                                className="flex items-center justify-center px-3 py-2 bg-green-50 text-green-700 font-medium text-xs sm:text-sm rounded-lg hover:bg-green-100 transition-colors"
                             >
-                                <MessageCircle className="w-4 h-4 mr-2" />
+                                <MessageCircle className="w-4 h-4 mr-1.5 shrink-0" />
                                 Notificar
                             </button>
                             <button
                                 onClick={() => openArbitrationModal(game)}
-                                className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 font-medium text-sm rounded-lg hover:bg-blue-100 transition-colors"
+                                className="flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 font-medium text-xs sm:text-sm rounded-lg hover:bg-blue-100 transition-colors"
                             >
-                                <Users className="w-4 h-4 mr-2" />
+                                <Users className="w-4 h-4 mr-1.5 shrink-0" />
                                 Asistencia y Arbitraje
                             </button>
                         </>
                     ) : (
-                        <button
-                            onClick={() => openScoreModal(game)}
-                            className="col-span-2 flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 font-medium text-sm rounded-lg hover:bg-blue-100 transition-colors"
-                        >
-                            <Trophy className="w-4 h-4 mr-2" />
-                            Registrar Resultado y Goles
-                        </button>
+                        <>
+                            <button
+                                onClick={() => openArbitrationModal(game)}
+                                className="flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 font-medium text-xs sm:text-sm rounded-lg hover:bg-blue-100 transition-colors"
+                            >
+                                <Users className="w-4 h-4 mr-1.5 shrink-0" />
+                                Asistencia y Arbitraje
+                            </button>
+                            <button
+                                onClick={() => openScoreModal(game)}
+                                className="flex items-center justify-center px-3 py-2 bg-amber-50 text-amber-700 font-medium text-xs sm:text-sm rounded-lg hover:bg-amber-100 transition-colors"
+                            >
+                                <Trophy className="w-4 h-4 mr-1.5 shrink-0" />
+                                Resultado y Goles
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -796,21 +819,16 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {playersInCategory.filter(player => !confirmedPlayers.includes(player.id)).length === 0 ? (
+                                    {playersInCategory.filter(player => !confirmedPlayers.some(id => Number(id) === Number(player.id))).length === 0 ? (
                                         <div className="col-span-2 text-center py-4 text-slate-500 bg-slate-100 rounded-xl text-sm">
                                             ¡Todos los jugadores han sido notificados o confirmados! 🎉
                                         </div>
                                     ) : (
-                                        playersInCategory.filter(player => !confirmedPlayers.includes(player.id)).map(player => {
+                                        playersInCategory.filter(player => !confirmedPlayers.some(id => Number(id) === Number(player.id))).map(player => {
                                             const parentsList = player.parents || [];
-                                            const isConfirmed = false;
                                             
                                             return (
-                                            <div key={player.id} className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
-                                                isConfirmed 
-                                                ? 'bg-green-50 border-green-200 opacity-70' 
-                                                : 'bg-white border-slate-200'
-                                            }`}>
+                                            <div key={player.id} className="p-4 rounded-xl border shadow-sm flex flex-col justify-between transition-all bg-white border-slate-200">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div>
                                                         <div className="font-bold text-slate-800 text-sm">{player.first_name} {player.last_name}</div>
@@ -820,48 +838,69 @@ export default function Matches({ auth, games, players, categories, senderPhone 
                                                     </div>
                                                     <button
                                                         onClick={() => toggleConfirmed(player.id)}
-                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1 ${
-                                                            isConfirmed
-                                                            ? 'bg-green-500 text-white'
-                                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                                        }`}
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1 bg-slate-100 text-slate-600 hover:bg-green-500 hover:text-white"
                                                     >
                                                         <Check className="w-3.5 h-3.5" />
-                                                        <span>{isConfirmed ? 'Confirmó' : 'Confirmar'}</span>
+                                                        <span>Confirmar</span>
                                                     </button>
                                                 </div>
                                                 
-                                                {!isConfirmed && (
-                                                    <div className="space-y-2 mt-2">
-                                                        {parentsList.length > 0 ? parentsList.map(parent => (
-                                                            parent.phone ? (
-                                                                <a 
-                                                                    key={parent.id}
-                                                                    href={generateWhatsAppLink(parent.phone)}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="flex items-center justify-center w-full px-3 py-2 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-bold rounded-lg transition-colors"
-                                                                >
-                                                                    <MessageCircle className="w-3.5 h-3.5 mr-2" />
-                                                                    {parent.name} ({parent.phone})
-                                                                </a>
-                                                            ) : (
-                                                                <div key={parent.id} className="text-xs text-slate-400 bg-slate-50 p-2 rounded border border-slate-100 text-center">
-                                                                    {parent.name} — Sin teléfono
-                                                                </div>
-                                                            )
-                                                        )) : (
-                                                            <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 text-center">
-                                                                Sin padres registrados
+                                                <div className="space-y-2 mt-2">
+                                                    {parentsList.length > 0 ? parentsList.map(parent => (
+                                                        parent.phone ? (
+                                                            <a 
+                                                                key={parent.id}
+                                                                href={generateWhatsAppLink(parent.phone)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center justify-center w-full px-3 py-2 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-bold rounded-lg transition-colors"
+                                                            >
+                                                                <MessageCircle className="w-3.5 h-3.5 mr-2" />
+                                                                {parent.name} ({parent.phone})
+                                                            </a>
+                                                        ) : (
+                                                            <div key={parent.id} className="text-xs text-slate-400 bg-slate-50 p-2 rounded border border-slate-100 text-center">
+                                                                {parent.name} — Sin teléfono
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                        )
+                                                    )) : (
+                                                        <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 text-center">
+                                                            Sin padres registrados
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })
                                     )}
                                 </div>
+
+                                {confirmedPlayers.length > 0 && (
+                                    <div className="mt-6 pt-4 border-t border-slate-200">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center">
+                                                <Check className="w-4 h-4 mr-1 text-green-600" />
+                                                Ya confirmaron ({confirmedPlayers.length})
+                                            </h5>
+                                            <span className="text-[11px] text-slate-400">Clic para desmarcar</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {playersInCategory.filter(p => confirmedPlayers.some(id => Number(id) === Number(p.id))).map(p => (
+                                                <button
+                                                    key={p.id}
+                                                    type="button"
+                                                    onClick={() => toggleConfirmed(p.id)}
+                                                    title="Clic para volver a poner en pendientes"
+                                                    className="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-50 text-green-800 border border-green-200 text-xs font-medium hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors group"
+                                                >
+                                                    <span className="mr-1.5 font-bold">✓</span>
+                                                    <span>{p.first_name} {p.last_name}</span>
+                                                    <X className="w-3.5 h-3.5 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {playersInCategory.length > 0 && (
                                     <div className="mt-4 text-center text-xs text-slate-500">
