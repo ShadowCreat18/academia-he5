@@ -226,7 +226,7 @@ const ChildFinancesCard = ({
                     <button
                         onClick={() => handlePayWithStripe({ type: 'player_total', player_id: child.id }, `player_${child.id}`)}
                         disabled={loadingAction === `player_${child.id}`}
-                        className="text-[#E31837] hover:text-red-700 font-bold text-sm flex items-center gap-1.5 transition disabled:opacity-50 px-3 py-2 hover:bg-red-50 rounded-lg"
+                        className="w-full sm:w-auto text-[#E31837] hover:text-red-700 font-bold text-sm flex items-center justify-center sm:justify-start gap-1.5 transition disabled:opacity-50 px-4 py-2.5 bg-red-50 sm:bg-transparent hover:bg-red-100 rounded-xl border border-red-100 sm:border-transparent"
                     >
                         {loadingAction === `player_${child.id}` ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -367,7 +367,7 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
 
     return (
         <ParentLayout title="Finanzas">
-            <div className="space-y-6 pb-24">
+            <div className="space-y-6 pb-44 md:pb-28">
 
                 {/* Modal de Recarga de Monedero */}
                 {isTopupModalOpen && (
@@ -735,16 +735,28 @@ export default function Finances({ auth, children = [], userPayments = [] }) {
 
             {/* Sticky Floating Action Bar for Selected Payments */}
             {selectedTransactions.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 z-40 sm:left-64 flex justify-center animate-in slide-in-from-bottom-4 duration-300">
-                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 max-w-lg w-full flex items-center justify-between gap-4">
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium">Seleccionados: <span className="font-bold text-slate-800">{selectedTransactions.length}</span></p>
-                            <p className="text-xl font-black text-[#E31837]">${selectedTotal.toFixed(2)} MXN</p>
+                <div className="fixed bottom-20 md:bottom-6 left-3 right-3 md:left-72 md:right-8 flex justify-center z-40 animate-in slide-in-from-bottom-4 duration-300 pointer-events-none">
+                    <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3),0_8px_10px_-6px_rgba(0,0,0,0.2)] border border-slate-300 p-3 sm:p-4 max-w-lg w-full flex items-center justify-between gap-3 pointer-events-auto">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <p className="text-xs text-slate-500 font-medium truncate">
+                                    Seleccionados: <span className="font-bold text-slate-800">{selectedTransactions.length}</span>
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedTransactions([])}
+                                    className="text-[11px] text-slate-400 hover:text-red-600 underline shrink-0"
+                                >
+                                    Desmarcar
+                                </button>
+                            </div>
+                            <p className="text-lg sm:text-xl font-black text-[#E31837] truncate">${selectedTotal.toFixed(2)} MXN</p>
                         </div>
                         <button
+                            type="button"
                             onClick={handlePayMultipleStripe}
                             disabled={loadingAction === 'multiple_charges'}
-                            className="bg-[#E31837] text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+                            className="bg-[#E31837] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl font-bold hover:bg-red-700 transition flex items-center gap-2 shadow-lg disabled:opacity-50 text-sm sm:text-base shrink-0"
                         >
                             {loadingAction === 'multiple_charges' ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
