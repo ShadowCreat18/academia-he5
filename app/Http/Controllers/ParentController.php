@@ -45,7 +45,7 @@ class ParentController extends Controller
         $children = $this->getChildrenQuery($user)->get();
         $needsConsent = $this->getConsentStatus($user, $children);
 
-        // Fetch just the very next game for the dashboard overview
+        // Consultar el siguiente partido programado para el resumen general
         $categories = $children->pluck('category')->filter()->unique()->toArray();
         $secondaryCategories = $children->pluck('secondary_category')->filter()->unique()->toArray();
         $allCategories = array_unique(array_merge($categories, $secondaryCategories));
@@ -110,7 +110,7 @@ class ParentController extends Controller
                     9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
                 ];
 
-                // Determine start month based on player creation date
+                // Determinar el mes de inicio segun la fecha de registro del alumno
                 $playerYear = date('Y', strtotime($child->created_at));
                 $startMonth = ($playerYear == $currentYear) ? (int)date('n', strtotime($child->created_at)) : 1;
 
@@ -260,7 +260,7 @@ class ParentController extends Controller
             'last_name'     => 'required|string|max:255',
             'birth_date'    => 'nullable|date',
             'curp'          => ['nullable', 'string', function($attribute, $value, $fail) {
-                                    // If provided and non-empty, must be exactly 18 chars
+                                    // Validar que la CURP tenga exactamente 18 caracteres
                                     if (!empty($value) && strlen($value) !== 18) {
                                         $fail('El CURP debe tener exactamente 18 caracteres.');
                                     }
@@ -298,7 +298,7 @@ class ParentController extends Controller
     {
         $user = $request->user();
 
-        // Only allow one pending request at a time
+        // Permitir unicamente una solicitud pendiente por usuario
         $existing = DataDeletionRequest::where('user_id', $user->id)
             ->where('status', 'pending')
             ->first();

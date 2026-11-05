@@ -29,7 +29,7 @@ class FinanceController extends Controller
             $player->total_debt = $player->financialTransactions->sum(function($t) {
                 return max(0, $t->amount - $t->paid_amount);
             });
-            unset($player->financialTransactions); // No need to send all pending tx to frontend in the list
+            unset($player->financialTransactions); // Limpiar la coleccion para aligerar la respuesta a la vista
         });
 
         $selectedPlayer = null;
@@ -41,7 +41,7 @@ class FinanceController extends Controller
             }, 'financialTransactions.transactionPayments'])->find($request->player_id);
 
             if ($selectedPlayer) {
-                // Auto-generate current year charges if the player has none
+                // Generar los cargos del ciclo actual si el alumno no los tiene registrados
                 $currentYear = date('Y');
 
                 if ($selectedPlayer->charges_generated_year < $currentYear) {
@@ -59,7 +59,7 @@ class FinanceController extends Controller
                         ['concept' => 'Uniformes', 'amount' => $costUniformes, 'due_date' => "$currentYear-01-15"],
                     ];
 
-                    // Add monthly charges based on join date
+                    // Asignar las colegiaturas mensuales a partir del mes de ingreso
                     $meses = [
                         1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
                         5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
@@ -92,7 +92,7 @@ class FinanceController extends Controller
                     $selectedPlayer->charges_generated_year = $currentYear;
                     $selectedPlayer->save();
 
-                    // Reload transactions
+                    // Recargar las transacciones actualizadas con sus abonos
                     $selectedPlayer->load(['financialTransactions' => function ($q) {
                         $q->orderByDesc('due_date');
                     }, 'financialTransactions.transactionPayments']);
@@ -253,7 +253,7 @@ class FinanceController extends Controller
             'due_date' => $request->due_date,
         ]);
 
-        // Recalculate status
+        // Recalcular el estatus del cargo segun lo cubierto
         if ($transaction->paid_amount >= $transaction->amount) {
             $transaction->update(['status' => 'paid']);
         } elseif ($transaction->paid_amount > 0) {
@@ -313,7 +313,7 @@ class FinanceController extends Controller
             $transaction->status = 'partial';
         }
 
-        // Update club amount
+        // Actualizar el saldo recaudado del club
         if ($transaction->is_arbitration_penalty) {
             $transaction->club_amount = ($transaction->club_amount ?? 0) + ($amountToPay * 0.50);
             $transaction->developer_amount = ($transaction->developer_amount ?? 0) + ($amountToPay * 0.50);
@@ -361,7 +361,7 @@ class FinanceController extends Controller
             // no se le deben cobrar inscripciones/mensualidades de esta categoría, solo arbitrajes.
             if ($player->category !== $request->category && $player->secondary_category === $request->category) {
                 if (!$isArbitraje) {
-                    continue; // Saltar si no es arbitraje
+                    continue; // Omitir si el concepto no corresponde a arbitraje
                 }
             }
 

@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "christian/academia-he5",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Sistema integral de gestión deportiva, contabilidad y pagos en línea para la Academia de Fútbol HE-5.",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {

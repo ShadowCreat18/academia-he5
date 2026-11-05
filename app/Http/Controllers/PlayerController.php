@@ -43,7 +43,7 @@ class PlayerController extends Controller
             }
         }
 
-        // Calculate debts for inactive players to show in the UI
+        // Calcular los saldos pendientes de alumnos inactivos para el panel
         $inactivePlayers->each(function($player) {
             $player->total_debt = $player->financialTransactions->where('status', '!=', 'paid')->sum(function($t) {
                 return max(0, $t->amount - $t->paid_amount);
@@ -95,7 +95,7 @@ class PlayerController extends Controller
             $file = $request->file('photo');
             $filename = uniqid('player_') . '.' . $file->getClientOriginalExtension();
             
-            // 2.5cm x 3cm is a 5:6 aspect ratio. Let's crop to 250x300 pixels
+            // Proporcion 5:6 estandar para credenciales (recorte a 250x300 px)
             $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
             $image = $manager->decode($file);
             $image->cover(250, 300);
@@ -200,7 +200,7 @@ class PlayerController extends Controller
 
         $callback = function() use($players) {
             $file = fopen('php://output', 'w');
-            // BOM for Excel UTF-8 compatibility
+            // Cabecera BOM para compatibilidad de acentos y caracteres especiales en Excel
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($file, ['Nombre Completo', 'Fecha de Nacimiento', 'CURP']);
 
@@ -304,7 +304,7 @@ class PlayerController extends Controller
 
     public function destroy(Player $player)
     {
-        // Compute remaining debt
+        // Obtener el monto de deuda restante
         $debt = $player->financialTransactions()->where('status', '!=', 'paid')->sum(DB::raw('amount - paid_amount'));
         
         if ($debt > 0) {
