@@ -20,3 +20,20 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+**/.DS_Store
+**/._*
+
+# Temporary patches, dumps, archives and scripts
+*.sql
+*.zip
+*.patch
+*.cjs
+Business_Model_Canvas_HE5.pdf
+update_finances.php
+update_settings.php
